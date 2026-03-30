@@ -71,7 +71,8 @@ def create_excel_model(std_params, new_params, n_cycles, wtp, discount_rate, sta
     ws_in.write_formula(row, 4, f"=SUM({','.join(std_pe_cost_cells) if std_pe_cost_cells else '0'})", money)
     std_pe_cost_cell = f"Inputs!E{row+1}"
     row += 2
-    
+    ni_row = row  # capture row index where New Intervention section starts in Inputs
+
     # --- New Intervention ---
     ws_in.write(row, 0, 'New Intervention Parameters', bold)
     ws_in.write(row+1, 0, 'State utilities')
@@ -163,22 +164,75 @@ def create_excel_model(std_params, new_params, n_cycles, wtp, discount_rate, sta
         
     
     # ----------------------------------------------------
+    # SHEET 2b: NEW INTERVENTION MARKOV TRACE (same sheet, below Std Care)
+    # ----------------------------------------------------
+    # Build Inputs cell references for New Intervention using captured ni_row
+    new_util_well    = f"Inputs!C{ni_row + 2}"   # utilities[0]
+    new_util_post    = f"Inputs!C{ni_row + 3}"   # utilities[1]
+    new_prob_s1_s2   = f"Inputs!C{ni_row + 5}"  # Well -> Post-Event
+    new_prob_s1_s3   = f"Inputs!C{ni_row + 6}"  # Well -> Dead
+    new_prob_s1_s1   = f"Inputs!C{ni_row + 7}"  # Well -> Well (calculated)
+    new_prob_s2_s3   = f"Inputs!C{ni_row + 9}"  # Post-Event -> Dead
+    new_prob_s2_s2   = f"Inputs!C{ni_row + 10}" # Post-Event -> Post-Event (calculated)
+
+    ni_start = n_cycles + 5  # xlsxwriter row for NI section header
+    ws_tr.write(ni_start, 0, 'New Intervention', bold)
+    ws_tr.write_row(ni_start + 1, 0, ['Cycle', s1, s2, s3, 'Discounted Cost ($)', 'Discounted QALYs'], bold)
+
+    # Cycle 0 — half-cycle correction
+    ni_r0    = ni_start + 2        # xlsxwriter row
+    ni_r0_xl = ni_r0 + 1           # Excel 1-indexed row
+    ws_tr.write_number(ni_r0, 0, 0)
+    ws_tr.write_number(ni_r0, 1, 1.0, dec)
+    ws_tr.write_number(ni_r0, 2, 0.0, dec)
+    ws_tr.write_number(ni_r0, 3, 0.0, dec)
+    ws_tr.write_formula(ni_r0, 4, f"=(B{ni_r0_xl}*{new_well_cost_cell} + C{ni_r0_xl}*{new_pe_cost_cell}) * 0.5", money)
+    ws_tr.write_formula(ni_r0, 5, f"=(B{ni_r0_xl}*{new_util_well} + C{ni_r0_xl}*{new_util_post}) * 0.5", dec)
+
+    for t in range(1, n_cycles + 1):
+        nr    = ni_start + 2 + t   # xlsxwriter row
+        nr_xl = nr + 1              # Excel row (current cycle)
+        pv_xl = nr_xl - 1           # Excel row (previous cycle)
+
+        ws_tr.write_number(nr, 0, t)
+        ws_tr.write_formula(nr, 1, f"=B{pv_xl}*{new_prob_s1_s1}", dec)
+        ws_tr.write_formula(nr, 2, f"=B{pv_xl}*{new_prob_s1_s2} + C{pv_xl}*{new_prob_s2_s2}", dec)
+        ws_tr.write_formula(nr, 3, f"=B{pv_xl}*{new_prob_s1_s3} + C{pv_xl}*{new_prob_s2_s3} + D{pv_xl}", dec)
+
+        hc         = " * 0.5" if t == n_cycles else ""
+        df_formula = f"1/((1+Inputs!B4)^{t})"
+        ws_tr.write_formula(nr, 4, f"=(B{nr_xl}*{new_well_cost_cell} + C{nr_xl}*{new_pe_cost_cell}) * {df_formula}{hc}", money)
+        ws_tr.write_formula(nr, 5, f"=(B{nr_xl}*{new_util_well} + C{nr_xl}*{new_util_post}) * {df_formula}{hc}", dec)
+
+    ni_last_xl = ni_start + 3 + n_cycles  # Excel row of last NI cycle
+
+    # ----------------------------------------------------
     # SHEET 3: RESULTS
     # ----------------------------------------------------
     ws_res = workbook.add_worksheet('Results')
     ws_res.write('A1', 'Deterministic Results', bold)
     ws_res.write_row('A2', ['Strategy', 'Total Cost', 'Total QALYs', 'ICER', 'NMB'], bold)
-    
+
     ws_res.write('A3', 'Standard Care')
     ws_res.write_formula('B3', f"=SUM('Markov Trace'!E3:E{r+1})", money)
     ws_res.write_formula('C3', f"=SUM('Markov Trace'!F3:F{r+1})", dec)
     ws_res.write('D3', '---')
-    ws_res.write_formula('E3', f"=(Inputs!B3*C3)-B3", money)
-    
-    # NOTE: In a full version, I would duplicate the Markov Trace for the New Intervention.
-    # To keep this script concise for demo purposes, we will assume New Intervention uses Python results.
-    # In reality, you'd repeat the trace block.
-    
+    ws_res.write_formula('E3', "=(Inputs!B3*C3)-B3", money)
+
+    ws_res.write('A4', 'New Intervention')
+    ws_res.write_formula('B4', f"=SUM('Markov Trace'!E{ni_r0_xl}:E{ni_last_xl})", money)
+    ws_res.write_formula('C4', f"=SUM('Markov Trace'!F{ni_r0_xl}:F{ni_last_xl})", dec)
+    ws_res.write_formula('D4', '=IF(C4-C3<>0,(B4-B3)/(C4-C3),"Dominated")', money)
+    ws_res.write_formula('E4', "=(Inputs!B3*C4)-B4", money)
+
+    ws_res.write('A6', 'Incremental', bold)
+    ws_res.write_formula('B6', "=B4-B3", money)
+    ws_res.write_formula('C6', "=C4-C3", dec)
+    ws_res.write('D6', 'ICER:', bold)
+    ws_res.write_formula('E6', "=D4", money)
+    ws_res.write('A7', 'INMB', bold)
+    ws_res.write_formula('B7', "=E4-E3", money)
+
     workbook.close()
     return filename
 

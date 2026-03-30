@@ -6,3 +6,4 @@ scipy
 seaborn
 xlsxwriter
 plotly
+openpyxl
