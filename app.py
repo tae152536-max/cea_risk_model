@@ -14,116 +14,79 @@ st.set_page_config(page_title="Cardiovascular CEA Model", layout="wide", initial
 
 st.markdown("""
 <style>
-    /* Clean SaaS Dashboard Theme with Minimal Color Cards */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+    /* Premium SaaS Dashboard Theme with Montserrat */
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
     
     html, body, [class*="css"] { 
-        font-family: 'Inter', sans-serif !important; 
-        color: #374151 !important;
+        font-family: 'Montserrat', sans-serif !important; 
+        color: #1e293b !important;
         font-size: 14px !important; 
     }
     
-    /* Light Grey Dashboard Canvas */
-    .stApp { background-color: #f3f4f6 !important; }
+    .stApp { background-color: #f8fafc !important; }
     
-    /* Clean Typography */
-    h1 { 
-        font-size: 1.8rem !important; 
-        color: #111827 !important; 
-        font-weight: 500 !important; 
-        border-bottom: none !important; 
-        margin-bottom: 20px; 
-    }
-    h2 { 
-        font-size: 1.4rem !important; 
-        color: #111827 !important; 
-        font-weight: 600 !important; 
-        margin-top: 30px; 
-        margin-bottom: 15px; 
-    }
-    h3, h4, h5 { 
-        font-size: 1.1rem !important; 
-        color: #374151 !important; 
-        font-weight: 600 !important; 
-    }
+    h1 { font-family: 'Montserrat', sans-serif !important; font-size: 1.9rem !important; color: #0f172a !important; font-weight: 700 !important; letter-spacing: -0.5px !important; margin-bottom: 20px; border-bottom: none !important;}
+    h2 { font-family: 'Montserrat', sans-serif !important; font-size: 1.4rem !important; color: #1e293b !important; font-weight: 600 !important; letter-spacing: -0.3px !important; margin-top: 30px; margin-bottom: 15px; }
+    h3, h4, h5 { font-family: 'Montserrat', sans-serif !important; font-size: 1.1rem !important; color: #334155 !important; font-weight: 600 !important; }
     
-    /* Hide Native Clutter */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    .block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 90% !important; }
     
-    /* Central Dashboard Page */
-    .block-container { 
-        padding-top: 2rem; 
-        padding-bottom: 3rem; 
-        max-width: 90% !important; 
-    }
+    [data-testid="stSidebar"] { background-color: #ffffff !important; border-right: 1px solid #e2e8f0 !important; }
     
-    /* Pure White Sidebar */
-    [data-testid="stSidebar"] { 
-        background-color: #ffffff !important; 
-        border-right: 1px solid #e5e7eb !important; 
-    }
-    
-    /* MINIMAL CARDS REMOVED - Dynamic Inline Styles Handled in Python */
-    
-    /* Primary Action Buttons */
     .stButton>button { 
-        background-color: #2563eb !important; /* Royal Blue */
+        background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
         border: none !important;
         color: #ffffff !important;
-        border-radius: 4px !important; 
-        font-weight: 500 !important; 
-        font-size: 0.9rem !important;
-        padding: 0.4rem 1.2rem !important;
-        box-shadow: none !important;
-        transition: background-color 0.2s;
+        border-radius: 8px !important; 
+        font-weight: 600 !important; 
+        font-size: 0.95rem !important;
+        padding: 0.5rem 1.4rem !important;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -1px rgba(37, 99, 235, 0.1) !important;
+        transition: all 0.3s ease;
     }
     .stButton>button:hover { 
-        background-color: #1d4ed8 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.1) !important;
     }
     
-    /* Clean Minimal Tabs */
     .stTabs [data-baseweb="tab-list"] { 
-        border-bottom: 1px solid #e5e7eb;
-        gap: 20px; 
+        border-bottom: none;
+        gap: 10px;
+        background-color: #f1f5f9;
+        padding: 5px;
+        border-radius: 12px;
     }
     .stTabs [data-baseweb="tab"] { 
         background-color: transparent !important; 
-        border-radius: 0; 
-        border-bottom: 2px solid transparent; 
-        padding: 8px 4px; 
-        font-weight: 500; 
+        border-radius: 8px; 
+        border: none !important;
+        padding: 8px 16px; 
+        font-weight: 600; 
         font-size: 0.95rem;
-        color: #6b7280;
+        color: #64748b;
+        transition: all 0.2s ease;
     }
     .stTabs [aria-selected="true"] { 
-        color: #2563eb !important; 
-        border-bottom-color: #2563eb !important; 
+        background-color: #ffffff !important;
+        color: #0f172a !important; 
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
     }
     
-    /* Inputs */
     .stSlider > div[data-baseweb="slider"] { padding-top: 5px; }
-    .stNumberInput > div[data-baseweb="input"] { 
-        border-radius: 4px !important; 
-        border: 1px solid #d1d5db !important; 
-        background-color: #ffffff !important;
-    }
+    .stNumberInput > div[data-baseweb="input"] { border-radius: 6px !important; border: 1px solid #cbd5e1 !important; background-color: #ffffff !important; }
     
-    /* Data Editor Overrides for White Flat Look */
     [data-testid="stDataFrame"] {
-        border-radius: 6px !important;
-        border: 1px solid #e5e7eb !important;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-    }
-    
-    /* Expander Overrides */
-    [data-testid="stExpander"] {
-        background-color: #ffffff !important;
-        border-radius: 6px !important;
-        border: 1px solid #e5e7eb !important;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
         overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.3s ease;
     }
+    [data-testid="stDataFrame"]:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important; }
+    
+    [data-testid="stExpander"] { background-color: #ffffff !important; border-radius: 10px !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05) !important; overflow: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
