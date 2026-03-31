@@ -244,18 +244,31 @@ def plot_markov_diagram(p_matrix, state_names, title="Markov State Diagram"):
     px     = np.array([R * np.cos(a) for a in angles])
     py     = np.array([R * np.sin(a) for a in angles])
 
-    # App-consistent palette (matches CSS variables in n_state_app.py)
+    # App-consistent palette — rgba at 0.55 opacity for a lighter, airy look
     NODE_COLORS = [
-        "#2563eb",  # blue-600
-        "#dc2626",  # red-600
-        "#16a34a",  # green-600
-        "#d97706",  # amber-600
-        "#7c3aed",  # violet-600
-        "#0891b2",  # cyan-600
-        "#be185d",  # pink-700
-        "#65a30d",  # lime-600
-        "#ea580c",  # orange-600
-        "#4f46e5",  # indigo-600
+        "rgba(37,99,235,0.55)",    # blue-600
+        "rgba(220,38,38,0.55)",    # red-600
+        "rgba(22,163,74,0.55)",    # green-600
+        "rgba(217,119,6,0.55)",    # amber-600
+        "rgba(124,58,237,0.55)",   # violet-600
+        "rgba(8,145,178,0.55)",    # cyan-600
+        "rgba(190,24,93,0.55)",    # pink-700
+        "rgba(101,163,13,0.55)",   # lime-600
+        "rgba(234,88,12,0.55)",    # orange-600
+        "rgba(79,70,229,0.55)",    # indigo-600
+    ]
+    # Solid version for arrowheads & borders (no transparency)
+    EDGE_COLORS = [
+        "rgba(37,99,235,0.50)",
+        "rgba(220,38,38,0.50)",
+        "rgba(22,163,74,0.50)",
+        "rgba(217,119,6,0.50)",
+        "rgba(124,58,237,0.50)",
+        "rgba(8,145,178,0.50)",
+        "rgba(190,24,93,0.50)",
+        "rgba(101,163,13,0.50)",
+        "rgba(234,88,12,0.50)",
+        "rgba(79,70,229,0.50)",
     ]
 
     annotations = []
@@ -263,8 +276,7 @@ def plot_markov_diagram(p_matrix, state_names, title="Markov State Diagram"):
 
     # ── Draw edges first (so nodes render on top) ────────────────────────
     for i in range(n):
-        col = NODE_COLORS[i % len(NODE_COLORS)]
-        col_rgba = col  # used for lines
+        col = EDGE_COLORS[i % len(EDGE_COLORS)]
 
         for j in range(n):
             prob = mat[i, j]
@@ -406,8 +418,8 @@ def plot_markov_diagram(p_matrix, state_names, title="Markov State Diagram"):
         mode="markers",
         marker=dict(
             size=NODE_PX + 14,
-            color="rgba(37,99,235,0.15)",
-            line=dict(color="#2563eb", width=2),
+            color="rgba(37,99,235,0.08)",
+            line=dict(color="rgba(37,99,235,0.35)", width=2),
         ),
         hoverinfo="skip",
         showlegend=False,
@@ -420,11 +432,11 @@ def plot_markov_diagram(p_matrix, state_names, title="Markov State Diagram"):
         marker=dict(
             size=NODE_PX,
             color=NODE_COLORS[:n],
-            line=dict(color="white", width=3),
+            line=dict(color="rgba(255,255,255,0.80)", width=3),
             symbol="circle",
         ),
         text=[f"<b>{s}</b>" for s in state_names],
-        textfont=dict(color="white", size=10,
+        textfont=dict(color="rgba(15,23,42,0.90)", size=10,
                       family="Montserrat, sans-serif"),
         textposition="middle center",
         hoverinfo="text",
