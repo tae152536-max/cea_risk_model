@@ -8,3 +8,12 @@ link2.txt
 link3.txt
 *.xlsx
 .DS_Store
+
+# Backup files
+*.bak
+
+# Claude internal
+.claude/
+
+# Local link files
+local_link.txt
