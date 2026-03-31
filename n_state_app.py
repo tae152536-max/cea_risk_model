@@ -9,7 +9,11 @@ from make_template import create_template_bytes, parse_template
 import visualizations
 import importlib
 importlib.reload(visualizations)
-from visualizations import plot_ce_plane, plot_ceac, plot_inmb_distribution, plot_cost_breakdown, plot_tornado
+from visualizations import (
+    plot_ce_plane, plot_ceac, plot_inmb_distribution,
+    plot_cost_breakdown, plot_tornado,
+    plot_markov_diagram, plot_markov_trace,
+)
 
 st.set_page_config(page_title="Generic N-State Model", layout="wide", initial_sidebar_state="expanded")
 
@@ -359,6 +363,28 @@ if errs:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# LIVE MARKOV STATE DIAGRAMS  (updates on every edit — no button needed)
+# ══════════════════════════════════════════════════════════════════════════════
+st.markdown("---")
+st.header("Live Markov State Diagrams")
+st.caption(
+    "Diagrams update in real-time as you edit the transition matrices above. "
+    "Edge width is proportional to probability. The starting state (row 0) is shown slightly larger."
+)
+
+d_col1, d_col2 = st.columns(2)
+with d_col1:
+    st.plotly_chart(
+        plot_markov_diagram(std_p_df.values, state_names, "Standard Care"),
+        use_container_width=True,
+    )
+with d_col2:
+    st.plotly_chart(
+        plot_markov_diagram(new_p_df.values, state_names, "New Intervention"),
+        use_container_width=True,
+    )
+
+# ══════════════════════════════════════════════════════════════════════════════
 # ASSEMBLE PARAMETER DICTS
 # ══════════════════════════════════════════════════════════════════════════════
 std_params = {
@@ -403,6 +429,19 @@ c1.metric("ICER ($/QALY)", icer_display)
 c2.metric("Incremental NMB (INMB)", f"${res['inmb']:,.0f}")
 decision = "✅ Cost-Effective" if res["inmb"] > 0 else "❌ Not Cost-Effective"
 c3.markdown(f"<br><b>Decision at WTP=${wtp:,}:</b> {decision}", unsafe_allow_html=True)
+
+st.subheader("Cohort Trace")
+tr_col1, tr_col2 = st.columns(2)
+with tr_col1:
+    st.plotly_chart(
+        plot_markov_trace(res["std_trace"], state_names, "Standard Care — Cohort Trace"),
+        use_container_width=True,
+    )
+with tr_col2:
+    st.plotly_chart(
+        plot_markov_trace(res["new_trace"], state_names, "New Intervention — Cohort Trace"),
+        use_container_width=True,
+    )
 
 st.subheader("Cost Breakdown")
 c_chart, _ = st.columns([1, 1])

@@ -225,6 +225,206 @@ def plot_inmb_distribution(psa_df):
     )
     return fig
 
+def plot_markov_diagram(p_matrix, state_names, title="Markov State Diagram"):
+    """
+    Real-time interactive Markov state diagram using Plotly.
+    Nodes = health states, directed edges = transition probabilities.
+    Self-loops, bidirectional offsets, and probability labels are all handled.
+    """
+    n   = len(state_names)
+    mat = np.array(p_matrix, dtype=float)
+
+    # ── Node positions: equal-angle circle, state-0 at top ──────────────
+    R      = 1.8 if n <= 4 else 2.4
+    angles = [np.pi / 2 - 2 * np.pi * i / n for i in range(n)]
+    px     = np.array([R * np.cos(a) for a in angles])
+    py     = np.array([R * np.sin(a) for a in angles])
+
+    NODE_COLORS = [
+        "#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed",
+        "#0891b2", "#be185d", "#65a30d", "#ea580c", "#4f46e5",
+    ]
+    NODE_R = 0.30          # node radius in data coords
+    THRESHOLD = 0.001      # hide edges below this probability
+
+    annotations = []
+    traces      = []
+
+    for i in range(n):
+        col = NODE_COLORS[i % len(NODE_COLORS)]
+        for j in range(n):
+            prob = mat[i, j]
+            if prob < THRESHOLD:
+                continue
+            lw = max(1.0, prob * 6)
+
+            # ── Self-loop ────────────────────────────────────────────────
+            if i == j:
+                # Small circle offset outward from the node
+                cx = px[i] + 0.60 * np.cos(angles[i])
+                cy = py[i] + 0.60 * np.sin(angles[i])
+                theta = np.linspace(0, 2 * np.pi, 60)
+                lx = cx + 0.28 * np.cos(theta)
+                ly = cy + 0.28 * np.sin(theta)
+                traces.append(go.Scatter(
+                    x=lx, y=ly, mode="lines",
+                    line=dict(color=col, width=lw),
+                    hoverinfo="text",
+                    hovertext=f"{state_names[i]} → {state_names[i]}: {prob:.3f}",
+                    showlegend=False,
+                ))
+                # Arrowhead at the loop's innermost point (toward node)
+                loop_in_x = cx + 0.28 * np.cos(np.pi + angles[i] % (2*np.pi))
+                loop_in_y = cy + 0.28 * np.sin(np.pi + angles[i] % (2*np.pi))
+                # Tiny nudge so arrow doesn't point at centre of loop
+                nx_ = loop_in_x + 0.001 * np.cos(angles[i])
+                ny_ = loop_in_y + 0.001 * np.sin(angles[i])
+                annotations.append(dict(
+                    x=loop_in_x, y=loop_in_y,
+                    ax=nx_, ay=ny_,
+                    axref="x", ayref="y",
+                    arrowhead=3, arrowsize=1.2,
+                    arrowwidth=lw, arrowcolor=col,
+                    showarrow=True,
+                ))
+                # Probability label above loop
+                annotations.append(dict(
+                    x=cx, y=cy + 0.34,
+                    text=f"<b>{prob:.2f}</b>",
+                    showarrow=False,
+                    font=dict(size=9, color="#374151"),
+                    bgcolor="rgba(255,255,255,0.80)",
+                    borderpad=2,
+                ))
+
+            # ── Directed edge i → j ──────────────────────────────────────
+            else:
+                x0, y0 = px[i], py[i]
+                x1, y1 = px[j], py[j]
+                dx, dy = x1 - x0, y1 - y0
+                dist   = np.hypot(dx, dy)
+                ux, uy = dx / dist, dy / dist   # unit i→j
+                perp_x, perp_y = -uy, ux        # perpendicular
+
+                # If the reverse edge also exists, offset both outward
+                has_rev = mat[j, i] > THRESHOLD
+                off     = 0.14 if has_rev else 0.0
+
+                # Pull arrow start/end back to the node edge
+                sx = x0 + NODE_R * ux + off * perp_x
+                sy = y0 + NODE_R * uy + off * perp_y
+                ex = x1 - NODE_R * ux + off * perp_x
+                ey = y1 - NODE_R * uy + off * perp_y
+
+                # Label midpoint (shifted a bit further off the line)
+                mx = (sx + ex) / 2 + (off + 0.06) * perp_x
+                my = (sy + ey) / 2 + (off + 0.06) * perp_y
+
+                annotations.append(dict(
+                    x=ex, y=ey,
+                    ax=sx, ay=sy,
+                    axref="x", ayref="y",
+                    arrowhead=3, arrowsize=1.2,
+                    arrowwidth=lw, arrowcolor=col,
+                    showarrow=True,
+                ))
+                annotations.append(dict(
+                    x=mx, y=my,
+                    text=f"<b>{prob:.2f}</b>",
+                    showarrow=False,
+                    font=dict(size=9, color="#374151"),
+                    bgcolor="rgba(255,255,255,0.80)",
+                    borderpad=2,
+                ))
+
+    # ── Node markers ────────────────────────────────────────────────────
+    node_sizes = [58 if i == 0 else 50 for i in range(n)]   # start state slightly bigger
+    node_hover = []
+    for i in range(n):
+        out = [f"→ {state_names[j]}: {mat[i,j]:.3f}"
+               for j in range(n) if mat[i, j] >= THRESHOLD]
+        node_hover.append(
+            f"<b>{state_names[i]}</b>"
+            + (" (start)" if i == 0 else "")
+            + "<br>" + "<br>".join(out)
+        )
+
+    traces.append(go.Scatter(
+        x=px, y=py,
+        mode="markers+text",
+        marker=dict(
+            size=node_sizes,
+            color=NODE_COLORS[:n],
+            line=dict(color="white", width=2.5),
+        ),
+        text=[f"<b>{s}</b>" for s in state_names],
+        textfont=dict(color="white", size=10),
+        textposition="middle center",
+        hoverinfo="text",
+        hovertext=node_hover,
+        showlegend=False,
+    ))
+
+    pad = R + 0.9
+    fig = go.Figure(
+        data=traces,
+        layout=go.Layout(
+            title=dict(
+                text=title,
+                font=dict(size=14, color="#0f172a", family="Montserrat, sans-serif"),
+                x=0.5, xanchor="center",
+            ),
+            annotations=annotations,
+            xaxis=dict(range=[-pad, pad], showgrid=False,
+                       zeroline=False, visible=False),
+            yaxis=dict(range=[-pad, pad], showgrid=False,
+                       zeroline=False, visible=False, scaleanchor="x"),
+            plot_bgcolor="#f8fafc",
+            paper_bgcolor="#ffffff",
+            margin=dict(l=10, r=10, t=45, b=10),
+            height=430,
+        ),
+    )
+    return fig
+
+
+def plot_markov_trace(trace, state_names, title="Markov Cohort Trace"):
+    """
+    Animated line chart of cohort proportions over cycles.
+    """
+    n_cycles = trace.shape[0] - 1
+    cycles   = np.arange(n_cycles + 1)
+
+    NODE_COLORS = [
+        "#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed",
+        "#0891b2", "#be185d", "#65a30d", "#ea580c", "#4f46e5",
+    ]
+    fig = go.Figure()
+    for i, name in enumerate(state_names):
+        fig.add_trace(go.Scatter(
+            x=cycles, y=trace[:, i],
+            mode="lines+markers",
+            name=name,
+            line=dict(color=NODE_COLORS[i % len(NODE_COLORS)], width=2.5),
+            marker=dict(size=4),
+            hovertemplate=f"Cycle %{{x}}<br>{name}: %{{y:.4f}}<extra></extra>",
+        ))
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=14, color="#0f172a"), x=0.5, xanchor="center"),
+        xaxis_title="Cycle",
+        yaxis_title="Cohort Proportion",
+        yaxis=dict(range=[0, 1.02], tickformat=".0%", gridcolor="#f1f5f9"),
+        xaxis=dict(gridcolor="#f1f5f9"),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        margin=dict(l=50, r=20, t=55, b=50),
+        height=340,
+        hovermode="x unified",
+    )
+    return fig
+
+
 def plot_tornado(owsa_df, base_inmb):
     """Plots the Tornado Diagram for One-Way Sensitivity Analysis"""
     fig, ax = plt.subplots(figsize=(10, 6))
