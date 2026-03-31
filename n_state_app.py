@@ -15,7 +15,7 @@ from visualizations import (
     plot_markov_diagram,
 )
 
-st.set_page_config(page_title="Generic N-State Model", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Cost-Effectiveness & Risk Analysis", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
@@ -78,7 +78,7 @@ version = st.session_state.get("upload_version", 0)
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE TITLE
 # ══════════════════════════════════════════════════════════════════════════════
-st.title("Generic N-State Markov Risk Analysis Model")
+st.title("Cost-Effectiveness and Risk Analysis (N-State Markov and Monte Carlo Simulation)")
 
 if st.session_state.get("_upload_source_name"):
     st.markdown(
@@ -88,7 +88,7 @@ if st.session_state.get("_upload_source_name"):
     )
 
 st.markdown(
-    "Define a fully customisable Markov model — upload an Excel template "
+    "Define a fully customisable cost-effectiveness model — upload an Excel template "
     "or fill in the matrices manually."
 )
 
