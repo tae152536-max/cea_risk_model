@@ -155,6 +155,307 @@ public class CustomersController : ControllerBase
     }
 
     // ------------------------------------------------------------------
+    // POST api/customers/login  — authenticate MedRep or Admin
+    // ------------------------------------------------------------------
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.Username) || string.IsNullOrWhiteSpace(req.Password))
+            return Unauthorized(new { Message = "Username and password required." });
+
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+
+        // Admin login: username=admin, password=ADMIN2025
+        if (req.Username.ToLower() == "admin" && req.Password == "ADMIN2025")
+            return Ok(new { Role = "admin", Name = "Administrator", AreaName = "All Areas", AreaCode = "" });
+
+        // MedRep login: username=sale, password=their area code
+        if (req.Username.ToLower() == "sale")
+        {
+            var sql = @"SELECT m.MedRepID, m.FullName, m.Email, m.Phone,
+                               a.AreaID, a.AreaName, a.AreaCode
+                        FROM dbo.MedReps m
+                        INNER JOIN dbo.Areas a ON a.AreaID = m.AreaID
+                        WHERE a.AreaCode = @pwd AND m.IsActive = 1";
+            await using var cmd = new SqlCommand(sql, cn);
+            cmd.Parameters.AddWithValue("@pwd", req.Password);
+            await using var r = await cmd.ExecuteReaderAsync();
+            if (await r.ReadAsync())
+                return Ok(new {
+                    Role      = "medrep",
+                    MedRepID  = r["MedRepID"],
+                    Name      = r["FullName"],
+                    Email     = r["Email"],
+                    Phone     = r["Phone"],
+                    AreaID    = r["AreaID"],
+                    AreaName  = r["AreaName"],
+                    AreaCode  = r["AreaCode"]
+                });
+            return Unauthorized(new { Message = "Invalid area code." });
+        }
+
+        return Unauthorized(new { Message = "Invalid username." });
+    }
+
+    // ------------------------------------------------------------------
+    // GET api/customers/medrep/{medRepId}/list  — MedRep's own customers
+    // ------------------------------------------------------------------
+    [HttpGet("medrep/{medRepId}/list")]
+    public async Task<IActionResult> GetMyCustomers(int medRepId)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        var sql = @"
+            SELECT c.[CustomerID], c.[DrName], c.[Hospital], c.[Address],
+                   a.[AreaName] AS Area, p.[ProductName] AS Product,
+                   c.[Class], c.[Status], c.[TotalVisits], c.[LastVisitDate], c.[CreatedAt]
+            FROM [dbo].[Customers] c
+            INNER JOIN [dbo].[Areas]    a ON a.[AreaID]   = c.[AreaID]
+            LEFT  JOIN [dbo].[Products] p ON p.[ProductID]= c.[ProductID]
+            WHERE c.[MedRepID] = @MedRepID AND c.[IsActive] = 1
+            ORDER BY c.[DrName]";
+        await using var cmd = new SqlCommand(sql, cn);
+        cmd.Parameters.AddWithValue("@MedRepID", medRepId);
+        var list = new List<object>();
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+            list.Add(new {
+                CustomerID   = r["CustomerID"],
+                DrName       = r["DrName"],
+                Hospital     = r["Hospital"],
+                Address      = r["Address"],
+                Area         = r["Area"],
+                Product      = r["Product"],
+                Class        = r["Class"],
+                Status       = r["Status"],
+                TotalVisits  = r["TotalVisits"],
+                LastVisitDate= r["LastVisitDate"],
+                CreatedAt    = r["CreatedAt"]
+            });
+        return Ok(list);
+    }
+
+    // ------------------------------------------------------------------
+    // POST api/customers/{id}/visit  — record a visit
+    // ------------------------------------------------------------------
+    [HttpPost("{id}/visit")]
+    public async Task<IActionResult> RecordVisit(int id, [FromBody] VisitRequest req)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+
+        // Insert into Visits table
+        var insertSql = @"
+            INSERT INTO [dbo].[Visits] ([CustomerID],[MedRepID],[VisitDate],[ProductID],[Notes],[Outcome])
+            VALUES (@CID, @MID, @Date, @PID, @Notes, @Outcome);
+            UPDATE [dbo].[Customers]
+            SET [TotalVisits]   = [TotalVisits] + 1,
+                [LastVisitDate] = @Date,
+                [UpdatedAt]     = GETDATE()
+            WHERE [CustomerID] = @CID;";
+        await using var cmd = new SqlCommand(insertSql, cn);
+        cmd.Parameters.AddWithValue("@CID",    id);
+        cmd.Parameters.AddWithValue("@MID",    req.MedRepID);
+        cmd.Parameters.AddWithValue("@Date",   req.VisitDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"));
+        cmd.Parameters.AddWithValue("@PID",    (object?)req.ProductID ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Notes",  (object?)req.Notes     ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@Outcome",(object?)req.Outcome   ?? DBNull.Value);
+        await cmd.ExecuteNonQueryAsync();
+
+        // Return updated visit count
+        await using var cmd2 = new SqlCommand(
+            "SELECT TotalVisits, LastVisitDate FROM dbo.Customers WHERE CustomerID=@id", cn);
+        cmd2.Parameters.AddWithValue("@id", id);
+        await using var r = await cmd2.ExecuteReaderAsync();
+        if (await r.ReadAsync())
+            return Ok(new { Message = "Visit recorded.", TotalVisits = r["TotalVisits"], LastVisitDate = r["LastVisitDate"] });
+        return Ok(new { Message = "Visit recorded." });
+    }
+
+    // ------------------------------------------------------------------
+    // GET api/customers/{id}/visits  — visit history for a customer
+    // ------------------------------------------------------------------
+    [HttpGet("{id}/visits")]
+    public async Task<IActionResult> GetVisits(int id)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        var sql = @"
+            SELECT v.[VisitID], v.[VisitDate], m.[FullName] AS MedRep,
+                   p.[ProductName] AS Product, v.[Notes], v.[Outcome], v.[CreatedAt]
+            FROM [dbo].[Visits] v
+            INNER JOIN [dbo].[MedReps]  m ON m.[MedRepID]  = v.[MedRepID]
+            LEFT  JOIN [dbo].[Products] p ON p.[ProductID] = v.[ProductID]
+            WHERE v.[CustomerID] = @id
+            ORDER BY v.[VisitDate] DESC";
+        await using var cmd = new SqlCommand(sql, cn);
+        cmd.Parameters.AddWithValue("@id", id);
+        var list = new List<object>();
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+            list.Add(new {
+                VisitID   = r["VisitID"],
+                VisitDate = r["VisitDate"],
+                MedRep    = r["MedRep"],
+                Product   = r["Product"],
+                Notes     = r["Notes"],
+                Outcome   = r["Outcome"]
+            });
+        return Ok(list);
+    }
+
+    // ------------------------------------------------------------------
+    // GET api/customers/pending  — admin approval queue
+    // ------------------------------------------------------------------
+    [HttpGet("pending")]
+    public async Task<IActionResult> GetPending()
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("usp_GetPendingCustomers", cn)
+        {
+            CommandType = System.Data.CommandType.StoredProcedure
+        };
+        var list = new List<object>();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new
+            {
+                CustomerID = reader["CustomerID"],
+                DrName     = reader["DrName"],
+                Hospital   = reader["Hospital"],
+                Address    = reader["Address"],
+                Area       = reader["Area"],
+                AreaID     = reader["AreaID"],
+                MedRep     = reader["MedRep"],
+                MedRepID   = reader["MedRepID"],
+                Product    = reader["Product"],
+                Class      = reader["Class"],
+                Status     = reader["Status"],
+                CreatedAt  = reader["CreatedAt"]
+            });
+        }
+        return Ok(list);
+    }
+
+    // ------------------------------------------------------------------
+    // PATCH api/customers/{id}/approve  — approve or reject
+    // ------------------------------------------------------------------
+    [HttpPatch("{id}/approve")]
+    public async Task<IActionResult> Approve(int id,
+        [FromQuery] string action,
+        [FromQuery] string adminName = "Admin",
+        [FromQuery] string? rejectReason = null)
+    {
+        if (action != "Approve" && action != "Reject")
+            return BadRequest("action must be 'Approve' or 'Reject'");
+
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand("usp_ApproveCustomer", cn)
+        {
+            CommandType = System.Data.CommandType.StoredProcedure
+        };
+        cmd.Parameters.AddWithValue("@CustomerID",   id);
+        cmd.Parameters.AddWithValue("@Action",       action);
+        cmd.Parameters.AddWithValue("@AdminName",    adminName);
+        cmd.Parameters.AddWithValue("@RejectReason", (object?)rejectReason ?? DBNull.Value);
+        var msg = (string?)await cmd.ExecuteScalarAsync();
+        return Ok(new { Message = msg });
+    }
+
+    // ------------------------------------------------------------------
+    // GET api/customers/all  — all customers with status (admin view)
+    // ------------------------------------------------------------------
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAll([FromQuery] string? status = null)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        var sql = @"
+            SELECT c.[CustomerID], c.[DrName], c.[Hospital], c.[Address],
+                   a.[AreaName] AS Area, a.[AreaID],
+                   m.[FullName] AS MedRep, m.[MedRepID],
+                   p.[ProductName] AS Product, c.[Class],
+                   c.[Status], c.[ApprovedBy], c.[ApprovedAt],
+                   c.[RejectReason], c.[TotalVisits], c.[LastVisitDate], c.[CreatedAt]
+            FROM [dbo].[Customers] c
+            INNER JOIN [dbo].[Areas]   a ON a.[AreaID]   = c.[AreaID]
+            INNER JOIN [dbo].[MedReps] m ON m.[MedRepID] = c.[MedRepID]
+            LEFT  JOIN [dbo].[Products] p ON p.[ProductID]= c.[ProductID]
+            WHERE c.[IsActive] = 1
+              AND (@Status IS NULL OR c.[Status] = @Status)
+            ORDER BY c.[CreatedAt] DESC";
+        await using var cmd = new SqlCommand(sql, cn);
+        cmd.Parameters.AddWithValue("@Status", (object?)status ?? DBNull.Value);
+        var list = new List<object>();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new
+            {
+                CustomerID   = reader["CustomerID"],
+                DrName       = reader["DrName"],
+                Hospital     = reader["Hospital"],
+                Address      = reader["Address"],
+                Area         = reader["Area"],
+                AreaID       = reader["AreaID"],
+                MedRep       = reader["MedRep"],
+                MedRepID     = reader["MedRepID"],
+                Product      = reader["Product"],
+                Class        = reader["Class"],
+                Status       = reader["Status"],
+                ApprovedBy   = reader["ApprovedBy"],
+                ApprovedAt   = reader["ApprovedAt"],
+                RejectReason = reader["RejectReason"],
+                TotalVisits  = reader["TotalVisits"],
+                LastVisitDate= reader["LastVisitDate"],
+                CreatedAt    = reader["CreatedAt"]
+            });
+        }
+        return Ok(list);
+    }
+
+    // ------------------------------------------------------------------
+    // GET api/customers/areas  — list all areas
+    // ------------------------------------------------------------------
+    [HttpGet("areas")]
+    public async Task<IActionResult> GetAreas()
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            "SELECT AreaID, AreaName, Region FROM dbo.Areas WHERE IsActive=1 ORDER BY AreaName", cn);
+        var list = new List<object>();
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+            list.Add(new { AreaID = r["AreaID"], AreaName = r["AreaName"], Region = r["Region"] });
+        return Ok(list);
+    }
+
+    // ------------------------------------------------------------------
+    // GET api/customers/medreps  — list all medreps
+    // ------------------------------------------------------------------
+    [HttpGet("medreps")]
+    public async Task<IActionResult> GetMedReps()
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"SELECT m.MedRepID, m.FullName, m.Email, m.Phone, a.AreaName
+              FROM dbo.MedReps m INNER JOIN dbo.Areas a ON a.AreaID=m.AreaID
+              WHERE m.IsActive=1 ORDER BY m.FullName", cn);
+        var list = new List<object>();
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+            list.Add(new { MedRepID = r["MedRepID"], FullName = r["FullName"],
+                           Email = r["Email"], Phone = r["Phone"], AreaName = r["AreaName"] });
+        return Ok(list);
+    }
+
+    // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
     private static async Task<int> LookupAreaAsync(SqlConnection cn, string areaName)
