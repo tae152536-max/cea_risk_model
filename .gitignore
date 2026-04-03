@@ -17,3 +17,9 @@ link3.txt
 
 # Local link files
 local_link.txt
+
+# .NET build artifacts
+CustomerDB/CustomerAPI/bin/
+CustomerDB/CustomerAPI/obj/
+CustomerDB/CustomerDB/bin/
+CustomerDB/CustomerDB/obj/
