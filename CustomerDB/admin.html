@@ -600,7 +600,7 @@ tr:hover td { background:#fafbfc; }
 </div><!-- end mainApp -->
 
 <script>
-const API = 'http://localhost:5000/api/customers';
+const API = `http://${window.location.hostname}:5000/api/customers`;
 const ADMIN = 'Admin';
 
 let areas        = [];
