@@ -213,7 +213,7 @@ public class CustomersController : ControllerBase
             FROM [dbo].[Customers] c
             INNER JOIN [dbo].[Areas]    a ON a.[AreaID]   = c.[AreaID]
             LEFT  JOIN [dbo].[Products] p ON p.[ProductID]= c.[ProductID]
-            WHERE c.[MedRepID] = @MedRepID AND c.[IsActive] = 1
+            WHERE c.[MedRepID] = @MedRepID AND c.[IsActive] = 1 AND c.[Status] != 'Rejected'
             ORDER BY c.[DrName]";
         await using var cmd = new SqlCommand(sql, cn);
         cmd.Parameters.AddWithValue("@MedRepID", medRepId);
