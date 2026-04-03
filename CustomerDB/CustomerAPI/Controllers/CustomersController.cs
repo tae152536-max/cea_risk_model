@@ -427,12 +427,40 @@ public class CustomersController : ControllerBase
         await using var cn = new SqlConnection(_conn);
         await cn.OpenAsync();
         await using var cmd = new SqlCommand(
-            "SELECT AreaID, AreaName, Region FROM dbo.Areas WHERE IsActive=1 ORDER BY AreaName", cn);
+            "SELECT AreaID, AreaName, AreaCode, Region FROM dbo.Areas WHERE IsActive=1 ORDER BY AreaName", cn);
         var list = new List<object>();
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync())
-            list.Add(new { AreaID = r["AreaID"], AreaName = r["AreaName"], Region = r["Region"] });
+            list.Add(new { AreaID = r["AreaID"], AreaName = r["AreaName"], AreaCode = r["AreaCode"], Region = r["Region"] });
         return Ok(list);
+    }
+
+    // ------------------------------------------------------------------
+    // POST api/customers/areas  — add a new area
+    // ------------------------------------------------------------------
+    [HttpPost("areas")]
+    public async Task<IActionResult> AddArea([FromBody] AreaRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.AreaName) || string.IsNullOrWhiteSpace(req.AreaCode))
+            return BadRequest("AreaName and AreaCode are required.");
+
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"IF EXISTS (SELECT 1 FROM dbo.Areas WHERE AreaCode=@c OR AreaName=@n)
+                  SELECT -1 AS AreaID;
+              ELSE BEGIN
+                  INSERT INTO dbo.Areas (AreaName, AreaCode, Region)
+                  VALUES (@n, @c, @r);
+                  SELECT SCOPE_IDENTITY() AS AreaID;
+              END", cn);
+        cmd.Parameters.AddWithValue("@n", req.AreaName);
+        cmd.Parameters.AddWithValue("@c", req.AreaCode.ToUpper());
+        cmd.Parameters.AddWithValue("@r", (object?)req.Region ?? DBNull.Value);
+        var newId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        if (newId == -1)
+            return Conflict(new { Message = "Area name or code already exists." });
+        return Ok(new { AreaID = newId, Message = "Area created successfully." });
     }
 
     // ------------------------------------------------------------------
@@ -444,15 +472,81 @@ public class CustomersController : ControllerBase
         await using var cn = new SqlConnection(_conn);
         await cn.OpenAsync();
         await using var cmd = new SqlCommand(
-            @"SELECT m.MedRepID, m.FullName, m.Email, m.Phone, a.AreaName
+            @"SELECT m.MedRepID, m.FullName, m.Email, m.Phone, a.AreaID, a.AreaName, a.AreaCode
               FROM dbo.MedReps m INNER JOIN dbo.Areas a ON a.AreaID=m.AreaID
               WHERE m.IsActive=1 ORDER BY m.FullName", cn);
         var list = new List<object>();
         await using var r = await cmd.ExecuteReaderAsync();
         while (await r.ReadAsync())
             list.Add(new { MedRepID = r["MedRepID"], FullName = r["FullName"],
-                           Email = r["Email"], Phone = r["Phone"], AreaName = r["AreaName"] });
+                           Email = r["Email"], Phone = r["Phone"],
+                           AreaID = r["AreaID"], AreaName = r["AreaName"], AreaCode = r["AreaCode"] });
         return Ok(list);
+    }
+
+    // ------------------------------------------------------------------
+    // POST api/customers/medreps  — add new MedRep
+    // ------------------------------------------------------------------
+    [HttpPost("medreps")]
+    public async Task<IActionResult> AddMedRep([FromBody] MedRepRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.FullName) || req.AreaID == 0)
+            return BadRequest("FullName and AreaID are required.");
+
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"INSERT INTO dbo.MedReps (FullName, Email, Phone, AreaID)
+              VALUES (@n, @e, @p, @a);
+              SELECT SCOPE_IDENTITY();", cn);
+        cmd.Parameters.AddWithValue("@n", req.FullName);
+        cmd.Parameters.AddWithValue("@e", (object?)req.Email ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@p", (object?)req.Phone ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@a", req.AreaID);
+        var newId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        return Ok(new { MedRepID = newId, Message = "MedRep added successfully." });
+    }
+
+    // ------------------------------------------------------------------
+    // PATCH api/customers/medrep/{id}  — update MedRep name/phone/area
+    // ------------------------------------------------------------------
+    [HttpPatch("medrep/{id}")]
+    public async Task<IActionResult> UpdateMedRep(int id, [FromBody] MedRepRequest req)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"UPDATE dbo.MedReps
+              SET FullName   = COALESCE(NULLIF(@n,''), FullName),
+                  Email      = COALESCE(NULLIF(@e,''), Email),
+                  Phone      = COALESCE(NULLIF(@p,''), Phone),
+                  AreaID     = CASE WHEN @a > 0 THEN @a ELSE AreaID END,
+                  UpdatedAt  = GETDATE()
+              WHERE MedRepID = @id AND IsActive = 1", cn);
+        cmd.Parameters.AddWithValue("@n",  req.FullName ?? "");
+        cmd.Parameters.AddWithValue("@e",  req.Email    ?? "");
+        cmd.Parameters.AddWithValue("@p",  req.Phone    ?? "");
+        cmd.Parameters.AddWithValue("@a",  req.AreaID);
+        cmd.Parameters.AddWithValue("@id", id);
+        var rows = await cmd.ExecuteNonQueryAsync();
+        return rows > 0
+            ? Ok(new { Message = "MedRep updated successfully." })
+            : NotFound(new { Message = "MedRep not found." });
+    }
+
+    // ------------------------------------------------------------------
+    // DELETE api/customers/medrep/{id}  — deactivate MedRep
+    // ------------------------------------------------------------------
+    [HttpDelete("medrep/{id}")]
+    public async Task<IActionResult> DeactivateMedRep(int id)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            "UPDATE dbo.MedReps SET IsActive=0, UpdatedAt=GETDATE() WHERE MedRepID=@id", cn);
+        cmd.Parameters.AddWithValue("@id", id);
+        await cmd.ExecuteNonQueryAsync();
+        return Ok(new { Message = "MedRep deactivated." });
     }
 
     // ------------------------------------------------------------------
