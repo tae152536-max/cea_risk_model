@@ -489,6 +489,38 @@ tr:hover td { background:#fafbfc; }
 </div>
 
 <!-- ══════════════════════════════════════════════════
+     MODAL — EDIT AREA
+═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="editAreaModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Area</span>
+      <button class="modal-close" onclick="closeModal('editAreaModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ea-id">
+      <div class="form-group">
+        <label class="form-label">Area Name <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="ea-name" placeholder="e.g. Cairo North">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Area Code <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="ea-code" placeholder="e.g. CN01" maxlength="10" style="text-transform:uppercase">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Region</label>
+        <input class="form-input" id="ea-region" placeholder="e.g. Cairo (optional)">
+      </div>
+      <div id="ea-error" style="color:var(--red);font-size:13px;margin-top:4px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editAreaModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateArea()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
      MODAL — CUSTOMER DETAIL
 ═══════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="detailModal">
@@ -952,7 +984,10 @@ async function loadMedReps() {
               <div style="font-size:14px;font-weight:700;">📍 ${areaName}</div>
               <div style="font-size:11px;color:var(--muted);margin-top:2px;">Code: <strong>${areaObj.areaCode||'—'}</strong></div>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openMedRepForm(null,${areaObj.areaID||0})">➕ Add</button>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm" onclick="openEditAreaForm(${areaObj.areaID||0},'${areaName}','${areaObj.areaCode||''}','${areaObj.region||''}')">✏️</button>
+              <button class="btn btn-primary btn-sm" onclick="openMedRepForm(null,${areaObj.areaID||0})">➕ Add</button>
+            </div>
           </div>
           ${reps.length ? reps.map(m => `
             <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);">
@@ -1149,6 +1184,33 @@ async function saveMedRepArea() {
     showToast('📍 MedRep area updated!', 'success');
     await loadMedReps();
   } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── EDIT AREA ─────────────────────────────────────────
+function openEditAreaForm(id, name, code, region) {
+  document.getElementById('ea-id').value     = id;
+  document.getElementById('ea-name').value   = name;
+  document.getElementById('ea-code').value   = code;
+  document.getElementById('ea-region').value = region;
+  document.getElementById('ea-error').textContent = '';
+  openModal('editAreaModal');
+}
+
+async function updateArea() {
+  const errEl  = document.getElementById('ea-error');
+  errEl.textContent = '';
+  const id     = document.getElementById('ea-id').value;
+  const name   = document.getElementById('ea-name').value.trim();
+  const code   = document.getElementById('ea-code').value.trim().toUpperCase();
+  const region = document.getElementById('ea-region').value.trim();
+  if (!name || !code) { errEl.textContent = '⚠️ Area Name and Code are required.'; return; }
+  try {
+    await apiFetch(`${API}/areas/${id}`, 'PATCH', { areaName: name, areaCode: code, region });
+    showToast(`✅ Area updated to "${name} (${code})"`, 'success');
+    closeModal('editAreaModal');
+    await loadAreas();
+    await loadMedReps();
+  } catch(e) { errEl.textContent = '❌ ' + e.message; }
 }
 
 // ── ADD AREA ──────────────────────────────────────────
