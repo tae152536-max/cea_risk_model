@@ -21,15 +21,7 @@ BEGIN
     DECLARE @ExistingID     INT = 0;
     DECLARE @DupReason      NVARCHAR(200);
 
-    SELECT
-        @ExistingID  = [CustomerID],
-        @IsDuplicate = [IsDuplicate],
-        @DupReason   = [Reason]
-    FROM (
-        EXEC [dbo].[usp_DetectDuplicate] @DrName, @Hospital
-    ) AS dup;
-
-    -- Workaround: inline the duplicate logic directly
+    -- Inline duplicate check
     SET @IsDuplicate = 0;
     SET @ExistingID  = 0;
 
