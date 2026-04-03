@@ -464,6 +464,32 @@ public class CustomersController : ControllerBase
     }
 
     // ------------------------------------------------------------------
+    // PATCH api/customers/areas/{id}  — update area name/code/region
+    // ------------------------------------------------------------------
+    [HttpPatch("areas/{id}")]
+    public async Task<IActionResult> UpdateArea(int id, [FromBody] AreaRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.AreaName) || string.IsNullOrWhiteSpace(req.AreaCode))
+            return BadRequest("AreaName and AreaCode are required.");
+
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            @"UPDATE dbo.Areas
+              SET AreaName = @n, AreaCode = @c, Region = @r
+              WHERE AreaID = @id AND IsActive = 1;
+              SELECT @@ROWCOUNT;", cn);
+        cmd.Parameters.AddWithValue("@n",  req.AreaName);
+        cmd.Parameters.AddWithValue("@c",  req.AreaCode.ToUpper());
+        cmd.Parameters.AddWithValue("@r",  (object?)req.Region ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@id", id);
+        var rows = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        return rows > 0
+            ? Ok(new { Message = "Area updated successfully." })
+            : NotFound(new { Message = "Area not found." });
+    }
+
+    // ------------------------------------------------------------------
     // GET api/customers/medreps  — list all medreps
     // ------------------------------------------------------------------
     [HttpGet("medreps")]
