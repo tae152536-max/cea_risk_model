@@ -427,7 +427,13 @@ async function doLogin() {
     document.getElementById('f-area').value = me.areaName;
     loadMyCustomers();
   } catch(e) {
-    err.textContent = '❌ Invalid area code. Please try again.';
+    if (e.message && e.message.includes('fetch')) {
+      err.textContent = '❌ Cannot reach server. Check your connection.';
+    } else if (e.message && e.message.includes('401')) {
+      err.textContent = '❌ Invalid area code. Please try again.';
+    } else {
+      err.textContent = '❌ ' + (e.message || 'Login failed. Please try again.');
+    }
     btn.textContent = 'Enter Portal →'; btn.disabled = false;
     document.getElementById('loginPass').value = '';
     document.getElementById('loginPass').focus();
