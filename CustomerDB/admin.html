@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #e84855; --primary-bg: #fff1f2;
+  --green: #10b981;   --green-bg: #ecfdf5;
+  --red: #ef4444;     --red-bg: #fef2f2;
+  --yellow: #f59e0b;  --yellow-bg: #fffbeb;
+  --blue: #3b82f6;    --blue-bg: #eff6ff;
+  --bg: #f0f2f6; --panel: #fff; --border: #e2e8f0;
+  --text: #0e1117; --muted: #6b7280;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); font-size:14px; }
+
+/* HEADER */
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 32px; height:60px; background:var(--panel);
+  border-bottom:1px solid var(--border); border-top:4px solid var(--primary);
+  position:sticky; top:0; z-index:50; box-shadow:0 1px 4px rgba(0,0,0,0.07);
+}
+.brand { display:flex; align-items:center; gap:12px; }
+.brand-icon { width:36px; height:36px; background:var(--primary); border-radius:8px;
+  display:flex; align-items:center; justify-content:center; font-size:20px; }
+.brand-name { font-size:16px; font-weight:800; }
+.brand-sub { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+.admin-badge { background:var(--primary-bg); color:var(--primary); border:1px solid var(--primary);
+  border-radius:20px; padding:4px 14px; font-size:12px; font-weight:600; }
+
+/* NAV TABS */
+.tabs { display:flex; gap:4px; padding:20px 32px 0; border-bottom:1px solid var(--border);
+  background:var(--panel); }
+.tab { padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent;
+  font-weight:500; color:var(--muted); transition:.2s; border-radius:6px 6px 0 0; }
+.tab:hover { color:var(--text); background:#f8fafc; }
+.tab.active { color:var(--primary); border-bottom-color:var(--primary); font-weight:600; }
+.tab-badge { background:var(--primary); color:#fff; border-radius:10px;
+  padding:1px 7px; font-size:11px; margin-left:6px; }
+
+/* MAIN */
+main { padding:28px 32px; max-width:1400px; }
+
+/* STATS ROW */
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.stat-card { background:var(--panel); border-radius:12px; padding:20px 24px;
+  border:1px solid var(--border); box-shadow:var(--shadow); }
+.stat-label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+.stat-value { font-size:28px; font-weight:800; margin-top:4px; }
+.stat-card.pending .stat-value  { color:var(--yellow); }
+.stat-card.approved .stat-value { color:var(--green); }
+.stat-card.rejected .stat-value { color:var(--red); }
+.stat-card.total .stat-value    { color:var(--blue); }
+
+/* PANEL */
+.panel { background:var(--panel); border-radius:12px; border:1px solid var(--border);
+  box-shadow:var(--shadow); overflow:hidden; }
+.panel-header { display:flex; align-items:center; justify-content:space-between;
+  padding:16px 24px; border-bottom:1px solid var(--border); }
+.panel-title { font-size:15px; font-weight:700; }
+.filter-row { display:flex; gap:10px; align-items:center; }
+.filter-row input, .filter-row select {
+  border:1px solid var(--border); border-radius:8px; padding:7px 12px;
+  font-size:13px; outline:none; font-family:inherit; }
+.filter-row input:focus, .filter-row select:focus { border-color:var(--primary); }
+
+/* TABLE */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th { background:#f8fafc; padding:11px 16px; text-align:left; font-size:12px;
+  font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.3px;
+  border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:13px 16px; border-bottom:1px solid var(--border); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:#fafbfc; }
+
+/* BADGES */
+.badge { display:inline-flex; align-items:center; gap:4px; border-radius:20px;
+  padding:3px 10px; font-size:12px; font-weight:600; }
+.badge-pending  { background:var(--yellow-bg); color:var(--yellow); }
+.badge-approved { background:var(--green-bg);  color:var(--green); }
+.badge-rejected { background:var(--red-bg);    color:var(--red); }
+.badge-a { background:#fdf4ff; color:#9333ea; }
+.badge-b { background:var(--blue-bg); color:var(--blue); }
+.badge-c { background:#f1f5f9; color:var(--muted); }
+
+/* BUTTONS */
+.btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px;
+  border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+  border:none; transition:.15s; font-family:inherit; }
+.btn-approve { background:var(--green-bg); color:var(--green); }
+.btn-approve:hover { background:#bbf7d0; }
+.btn-reject  { background:var(--red-bg);  color:var(--red); }
+.btn-reject:hover  { background:#fecaca; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:#d63f4b; }
+.btn-ghost { background:#f1f5f9; color:var(--text); }
+.btn-ghost:hover { background:#e2e8f0; }
+.btn-sm { padding:5px 10px; font-size:12px; }
+
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45);
+  display:flex; align-items:center; justify-content:center; z-index:200; display:none; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--panel); border-radius:16px; width:480px; max-width:95vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.2); overflow:hidden; }
+.modal-header { padding:20px 24px; border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center; }
+.modal-title { font-size:16px; font-weight:700; }
+.modal-close { cursor:pointer; font-size:20px; color:var(--muted); background:none;
+  border:none; line-height:1; padding:4px; }
+.modal-body { padding:24px; }
+.modal-footer { padding:16px 24px; border-top:1px solid var(--border);
+  display:flex; justify-content:flex-end; gap:10px; }
+.form-group { margin-bottom:16px; }
+.form-label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+.form-input { width:100%; border:1px solid var(--border); border-radius:8px;
+  padding:9px 12px; font-size:14px; font-family:inherit; outline:none; }
+.form-input:focus { border-color:var(--primary); }
+.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.info-item label { font-size:11px; color:var(--muted); text-transform:uppercase;
+  letter-spacing:.4px; display:block; margin-bottom:3px; }
+.info-item span { font-size:14px; font-weight:500; }
+
+/* EMPTY STATE */
+.empty { text-align:center; padding:60px 20px; color:var(--muted); }
+.empty-icon { font-size:48px; margin-bottom:12px; }
+
+/* TOAST */
+.toast { position:fixed; bottom:24px; right:24px; background:#1e293b; color:#fff;
+  border-radius:10px; padding:12px 20px; font-size:13px; font-weight:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.2); z-index:999;
+  transform:translateY(100px); opacity:0; transition:.3s; pointer-events:none; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.success { border-left:4px solid var(--green); }
+.toast.error   { border-left:4px solid var(--red); }
+
+/* LOADING */
+.loading { display:flex; align-items:center; gap:10px; padding:40px; color:var(--muted); justify-content:center; }
+.spinner { width:20px; height:20px; border:2px solid var(--border);
+  border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#fff1f2,#f0f2f6);
+  display:flex;align-items:center;justify-content:center;z-index:300;}
+.login-card{background:#fff;border-radius:20px;padding:48px 40px;width:400px;max-width:95vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.12);text-align:center;}
+.login-icon{font-size:52px;margin-bottom:14px;}
+.login-title{font-size:22px;font-weight:800;margin-bottom:6px;}
+.login-sub{color:var(--muted);font-size:13px;margin-bottom:28px;}
+.login-field{text-align:left;margin-bottom:14px;}
+.login-field label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;}
+.login-field input{width:100%;border:1px solid var(--border);border-radius:10px;
+  padding:11px 14px;font-size:14px;font-family:inherit;outline:none;}
+.login-field input:focus{border-color:var(--primary);}
+.login-btn-main{width:100%;background:var(--primary);color:#fff;border:none;border-radius:10px;
+  padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;margin-top:4px;}
+.login-btn-main:hover{background:#d63f4b;}
+.login-err{color:var(--red);font-size:13px;margin-top:10px;min-height:18px;}
+/* PAGE HIDDEN */
+.page { display:none; } .page.active { display:block; }
+#mainApp{display:none;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-icon">🏥</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">Pilot Sales · Internal Use Only</div>
+    <div class="login-field">
+      <label>Username</label>
+      <input id="adminUser" type="text" placeholder="admin" value="admin" readonly style="background:#f8fafc;color:var(--muted);">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input id="adminPass" type="password" placeholder="Enter admin password…"
+        onkeydown="if(event.key==='Enter')doAdminLogin()">
+    </div>
+    <button class="login-btn-main" onclick="doAdminLogin()">Sign In →</button>
+    <div class="login-err" id="adminErr"></div>
+  </div>
+</div>
+
+<div id="mainApp">
+<!-- HEADER -->
+<header>
+  <div class="brand">
+    <div class="brand-icon">🏥</div>
+    <div>
+      <div class="brand-name">Customer Admin Panel</div>
+      <div class="brand-sub">Pilot Sales · Internal Use</div>
+    </div>
+  </div>
+  <span class="admin-badge">👤 Admin</span>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="showPage('approvals')">
+    ⏳ Pending Approvals <span class="tab-badge" id="pendingCount">0</span>
+  </div>
+  <div class="tab" onclick="showPage('customers')">📋 All Customers</div>
+  <div class="tab" onclick="showPage('medreps')">👥 Med Reps</div>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 1 — PENDING APPROVALS
+═══════════════════════════════════════════════════ -->
+<div id="page-approvals" class="page active">
+
+  <!-- Stats -->
+  <div class="stats" id="statsRow">
+    <div class="stat-card pending"><div class="stat-label">Pending</div><div class="stat-value" id="s-pending">—</div></div>
+    <div class="stat-card approved"><div class="stat-label">Approved</div><div class="stat-value" id="s-approved">—</div></div>
+    <div class="stat-card rejected"><div class="stat-label">Rejected</div><div class="stat-value" id="s-rejected">—</div></div>
+    <div class="stat-card total"><div class="stat-label">Total</div><div class="stat-value" id="s-total">—</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">⏳ Customers Awaiting Approval</span>
+      <button class="btn btn-ghost btn-sm" onclick="loadPending()">🔄 Refresh</button>
+    </div>
+    <div id="pendingTable"><div class="loading"><div class="spinner"></div> Loading…</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 2 — ALL CUSTOMERS
+═══════════════════════════════════════════════════ -->
+<div id="page-customers" class="page">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">📋 All Customers</span>
+      <div class="filter-row">
+        <input id="searchInput" type="text" placeholder="🔍 Search Dr / Hospital…" oninput="filterTable()" style="width:220px">
+        <select id="statusFilter" onchange="loadAll()">
+          <option value="">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="loadAll()">🔄 Refresh</button>
+      </div>
+    </div>
+    <div id="allTable"><div class="loading"><div class="spinner"></div> Loading…</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 3 — MED REPS
+═══════════════════════════════════════════════════ -->
+<div id="page-medreps" class="page">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">👥 Med Reps</span>
+      <button class="btn btn-ghost btn-sm" onclick="loadMedReps()">🔄 Refresh</button>
+    </div>
+    <div id="medrepTable"><div class="loading"><div class="spinner"></div> Loading…</div></div>
+  </div>
+</div>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════
+     MODAL — APPROVE / REJECT
+═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="approveModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Customer Details</span>
+      <button class="modal-close" onclick="closeModal('approveModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-grid" id="modalInfo"></div>
+      <div class="form-group" id="rejectReasonGroup" style="margin-top:16px; display:none;">
+        <label class="form-label">Rejection Reason</label>
+        <input class="form-input" id="rejectReason" placeholder="Enter reason for rejection…">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('approveModal')">Cancel</button>
+      <button class="btn btn-reject"  id="btnReject"  onclick="doAction('Reject')">✕ Reject</button>
+      <button class="btn btn-approve" id="btnApprove" onclick="doAction('Approve')">✓ Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     MODAL — CHANGE AREA
+═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="areaModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Change Area</span>
+      <button class="modal-close" onclick="closeModal('areaModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:16px; color:var(--muted)">
+        Changing area for: <strong id="areaModalDr"></strong>
+      </p>
+      <div class="form-group">
+        <label class="form-label">Select New Area</label>
+        <select class="form-input" id="newAreaSelect"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('areaModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveArea()">Save Area</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     MODAL — CHANGE MEDREP AREA
+═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="medrepAreaModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Change MedRep Area</span>
+      <button class="modal-close" onclick="closeModal('medrepAreaModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:16px; color:var(--muted)">
+        Changing area for: <strong id="medrepModalName"></strong>
+      </p>
+      <div class="form-group">
+        <label class="form-label">Select New Area</label>
+        <select class="form-input" id="newMedRepAreaSelect"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('medrepAreaModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMedRepArea()">Save Area</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</div><!-- end mainApp -->
+
+<script>
+const API = 'http://localhost:5000/api/customers';
+const ADMIN = 'Admin';
+
+let areas = [];
+let currentCustomerID = null;
+let currentMedRepID   = null;
+let allCustomers      = [];
+
+// ── ADMIN LOGIN ──────────────────────────────────────
+window.onload = () => {
+  document.getElementById('adminPass').focus();
+};
+
+async function doAdminLogin() {
+  const pass = document.getElementById('adminPass').value.trim();
+  const err  = document.getElementById('adminErr');
+  if (!pass) { err.textContent = 'Password required.'; return; }
+  err.textContent = '';
+  try {
+    const res = await apiFetch(`${API}/login`, 'POST', { username: 'admin', password: pass });
+    if (res.role !== 'admin') { err.textContent = 'Access denied.'; return; }
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display    = 'block';
+    await loadAreas();
+    await loadPending();
+    await loadStats();
+  } catch(e) {
+    err.textContent = '❌ Invalid password. Please try again.';
+    document.getElementById('adminPass').value = '';
+    document.getElementById('adminPass').focus();
+  }
+}
+
+// ── INIT ────────────────────────────────────────────
+
+// ── NAVIGATION ──────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'customers') loadAll();
+  if (name === 'medreps')   loadMedReps();
+}
+
+// ── STATS ────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const all = await apiFetch(`${API}/all`);
+    const pending  = all.filter(c => c.status === 'Pending').length;
+    const approved = all.filter(c => c.status === 'Approved').length;
+    const rejected = all.filter(c => c.status === 'Rejected').length;
+    document.getElementById('s-pending').textContent  = pending;
+    document.getElementById('s-approved').textContent = approved;
+    document.getElementById('s-rejected').textContent = rejected;
+    document.getElementById('s-total').textContent    = all.length;
+    document.getElementById('pendingCount').textContent = pending;
+  } catch(e) {}
+}
+
+// ── AREAS ────────────────────────────────────────────
+async function loadAreas() {
+  try { areas = await apiFetch(`${API}/areas`); } catch(e) {}
+}
+
+// ── PENDING APPROVALS ────────────────────────────────
+async function loadPending() {
+  document.getElementById('pendingTable').innerHTML =
+    '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try {
+    const data = await apiFetch(`${API}/pending`);
+    document.getElementById('pendingCount').textContent = data.length;
+    if (!data.length) {
+      document.getElementById('pendingTable').innerHTML =
+        '<div class="empty"><div class="empty-icon">✅</div><p>No pending approvals</p></div>';
+      return;
+    }
+    document.getElementById('pendingTable').innerHTML = `
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Dr Name</th><th>Hospital</th><th>Area</th>
+          <th>Med Rep</th><th>Product</th><th>Class</th><th>Submitted</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${data.map(c => `
+            <tr>
+              <td><strong>${c.drName}</strong></td>
+              <td>${c.hospital}</td>
+              <td>${c.area}</td>
+              <td>${c.medRep}</td>
+              <td>${c.product || '—'}</td>
+              <td><span class="badge badge-${(c.class||'c').toLowerCase()}">${c.class || '—'}</span></td>
+              <td style="color:var(--muted); font-size:12px">${fmtDate(c.createdAt)}</td>
+              <td>
+                <div style="display:flex; gap:6px">
+                  <button class="btn btn-approve btn-sm" onclick="openApproveModal(${c.customerID})">✓ Approve</button>
+                  <button class="btn btn-reject btn-sm"  onclick="openRejectModal(${c.customerID})">✕ Reject</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`;
+  } catch(e) {
+    document.getElementById('pendingTable').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><p>Cannot connect to API<br><small>${e.message}</small></p></div>`;
+  }
+}
+
+// ── ALL CUSTOMERS ────────────────────────────────────
+async function loadAll() {
+  document.getElementById('allTable').innerHTML =
+    '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  const status = document.getElementById('statusFilter')?.value || '';
+  try {
+    const url = status ? `${API}/all?status=${status}` : `${API}/all`;
+    allCustomers = await apiFetch(url);
+    renderAllTable(allCustomers);
+  } catch(e) {
+    document.getElementById('allTable').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><p>Cannot connect to API<br><small>${e.message}</small></p></div>`;
+  }
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allCustomers.filter(c =>
+    c.drName.toLowerCase().includes(q) || c.hospital.toLowerCase().includes(q));
+  renderAllTable(filtered);
+}
+
+function renderAllTable(data) {
+  if (!data.length) {
+    document.getElementById('allTable').innerHTML =
+      '<div class="empty"><div class="empty-icon">🔍</div><p>No customers found</p></div>';
+    return;
+  }
+  document.getElementById('allTable').innerHTML = `
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Dr Name</th><th>Hospital</th><th>Area</th><th>Med Rep</th>
+        <th>Product</th><th>Class</th><th>Status</th><th>Visits</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        ${data.map(c => `
+          <tr>
+            <td><strong>${c.drName}</strong></td>
+            <td>${c.hospital}</td>
+            <td>${c.area}</td>
+            <td>${c.medRep}</td>
+            <td>${c.product || '—'}</td>
+            <td><span class="badge badge-${(c.class||'c').toLowerCase()}">${c.class || '—'}</span></td>
+            <td><span class="badge badge-${(c.status||'').toLowerCase()}">${statusIcon(c.status)} ${c.status}</span></td>
+            <td>${c.totalVisits}</td>
+            <td>
+              <div style="display:flex; gap:6px; flex-wrap:wrap">
+                ${c.status === 'Pending' ? `
+                  <button class="btn btn-approve btn-sm" onclick="openApproveModal(${c.customerID})">✓ Approve</button>
+                  <button class="btn btn-reject  btn-sm" onclick="openRejectModal(${c.customerID})">✕ Reject</button>` : ''}
+                <button class="btn btn-ghost btn-sm" onclick="openAreaModal(${c.customerID},'${esc(c.drName)}',${c.areaID})">📍 Change Area</button>
+              </div>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+// ── MED REPS ─────────────────────────────────────────
+async function loadMedReps() {
+  document.getElementById('medrepTable').innerHTML =
+    '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try {
+    const data = await apiFetch(`${API}/medreps`);
+    if (!data.length) {
+      document.getElementById('medrepTable').innerHTML =
+        '<div class="empty"><div class="empty-icon">👥</div><p>No med reps found</p></div>';
+      return;
+    }
+    document.getElementById('medrepTable').innerHTML = `
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Name</th><th>Email</th><th>Phone</th><th>Current Area</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+          ${data.map(m => `
+            <tr>
+              <td><strong>${m.fullName}</strong></td>
+              <td>${m.email}</td>
+              <td>${m.phone || '—'}</td>
+              <td>📍 ${m.areaName}</td>
+              <td>
+                <button class="btn btn-ghost btn-sm" onclick="openMedRepAreaModal(${m.medRepID},'${esc(m.fullName)}')">
+                  📍 Change Area
+                </button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`;
+  } catch(e) {
+    document.getElementById('medrepTable').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><p>Cannot connect to API<br><small>${e.message}</small></p></div>`;
+  }
+}
+
+// ── APPROVE / REJECT MODAL ────────────────────────────
+async function openApproveModal(id) {
+  currentCustomerID = id;
+  document.getElementById('modalTitle').textContent = 'Approve Customer';
+  document.getElementById('rejectReasonGroup').style.display = 'none';
+  document.getElementById('btnApprove').style.display = '';
+  document.getElementById('btnReject').style.display  = 'none';
+  await populateModalInfo(id);
+  openModal('approveModal');
+}
+async function openRejectModal(id) {
+  currentCustomerID = id;
+  document.getElementById('modalTitle').textContent = 'Reject Customer';
+  document.getElementById('rejectReasonGroup').style.display = '';
+  document.getElementById('rejectReason').value = '';
+  document.getElementById('btnApprove').style.display = 'none';
+  document.getElementById('btnReject').style.display  = '';
+  await populateModalInfo(id);
+  openModal('approveModal');
+}
+
+async function populateModalInfo(id) {
+  const all = await apiFetch(`${API}/all`);
+  const c = all.find(x => x.customerID === id);
+  if (!c) return;
+  document.getElementById('modalInfo').innerHTML = `
+    <div class="info-item"><label>Dr Name</label><span>${c.drName}</span></div>
+    <div class="info-item"><label>Hospital</label><span>${c.hospital}</span></div>
+    <div class="info-item"><label>Area</label><span>${c.area}</span></div>
+    <div class="info-item"><label>Med Rep</label><span>${c.medRep}</span></div>
+    <div class="info-item"><label>Product</label><span>${c.product || '—'}</span></div>
+    <div class="info-item"><label>Class</label><span>${c.class || '—'}</span></div>
+    <div class="info-item"><label>Address</label><span>${c.address || '—'}</span></div>
+    <div class="info-item"><label>Submitted</label><span>${fmtDate(c.createdAt)}</span></div>`;
+}
+
+async function doAction(action) {
+  const reason = document.getElementById('rejectReason').value;
+  const url = `${API}/${currentCustomerID}/approve?action=${action}&adminName=${encodeURIComponent(ADMIN)}`
+    + (reason ? `&rejectReason=${encodeURIComponent(reason)}` : '');
+  try {
+    await apiFetch(url, 'PATCH');
+    closeModal('approveModal');
+    showToast(action === 'Approve' ? '✅ Customer approved!' : '✕ Customer rejected', action === 'Approve' ? 'success' : 'error');
+    await loadPending(); await loadStats();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── AREA MODAL ────────────────────────────────────────
+function openAreaModal(id, drName, currentAreaID) {
+  currentCustomerID = id;
+  document.getElementById('areaModalDr').textContent = drName;
+  const sel = document.getElementById('newAreaSelect');
+  sel.innerHTML = areas.map(a =>
+    `<option value="${a.areaID}" ${a.areaID === currentAreaID ? 'selected' : ''}>${a.areaName}</option>`
+  ).join('');
+  openModal('areaModal');
+}
+
+async function saveArea() {
+  const newAreaId = document.getElementById('newAreaSelect').value;
+  try {
+    await apiFetch(`${API}/${currentCustomerID}/area?newAreaId=${newAreaId}`, 'PATCH');
+    closeModal('areaModal');
+    showToast('📍 Area updated successfully!', 'success');
+    await loadAll(); await loadPending();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── MEDREP AREA MODAL ─────────────────────────────────
+function openMedRepAreaModal(id, name) {
+  currentMedRepID = id;
+  document.getElementById('medrepModalName').textContent = name;
+  const sel = document.getElementById('newMedRepAreaSelect');
+  sel.innerHTML = areas.map(a => `<option value="${a.areaID}">${a.areaName}</option>`).join('');
+  openModal('medrepAreaModal');
+}
+
+async function saveMedRepArea() {
+  const newAreaId = document.getElementById('newMedRepAreaSelect').value;
+  try {
+    await apiFetch(`${API}/medrep/${currentMedRepID}/area?newAreaId=${newAreaId}`, 'PATCH');
+    closeModal('medrepAreaModal');
+    showToast('📍 MedRep area updated!', 'success');
+    await loadMedReps();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── HELPERS ───────────────────────────────────────────
+async function apiFetch(url, method = 'GET') {
+  const res = await fetch(url, { method });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+function statusIcon(s) {
+  return s === 'Approved' ? '✅' : s === 'Rejected' ? '✕' : '⏳';
+}
+function esc(s) { return (s || '').replace(/'/g, "\\'"); }
+</script>
+</body>
+</html>

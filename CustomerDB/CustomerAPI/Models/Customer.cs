@@ -19,6 +19,21 @@ public class CustomerResult
     public string Message            { get; set; } = string.Empty;
 }
 
+public class LoginRequest
+{
+    public string Username { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
+
+public class VisitRequest
+{
+    public int       MedRepID   { get; set; }
+    public DateTime? VisitDate  { get; set; }
+    public int?      ProductID  { get; set; }
+    public string?   Notes      { get; set; }
+    public string?   Outcome    { get; set; }
+}
+
 public class DuplicateResult
 {
     public int    CustomerID { get; set; }

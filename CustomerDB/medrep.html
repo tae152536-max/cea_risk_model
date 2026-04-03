@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedRep Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary:#e84855; --primary-bg:#fff1f2; --primary-mid:#ffd6d9;
+  --green:#10b981;   --green-bg:#ecfdf5;
+  --blue:#3b82f6;    --blue-bg:#eff6ff;
+  --yellow:#f59e0b;  --yellow-bg:#fffbeb;
+  --red:#ef4444;     --red-bg:#fef2f2;
+  --bg:#f0f2f6; --panel:#fff; --border:#e2e8f0;
+  --text:#0e1117; --muted:#6b7280;
+  --shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+
+/* LOGIN SCREEN */
+.login-screen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#fff1f2 0%,#f0f2f6 100%);
+}
+.login-card{
+  background:var(--panel);border-radius:20px;padding:48px 40px;
+  width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.12);text-align:center;
+}
+.login-icon{font-size:52px;margin-bottom:16px;}
+.login-title{font-size:24px;font-weight:800;margin-bottom:6px;}
+.login-sub{color:var(--muted);margin-bottom:32px;font-size:14px;}
+.login-select{
+  width:100%;border:2px solid var(--border);border-radius:12px;
+  padding:14px 16px;font-size:15px;font-family:inherit;outline:none;
+  margin-bottom:16px;appearance:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 16px center;
+}
+.login-select:focus{border-color:var(--primary);}
+.login-btn{
+  width:100%;background:var(--primary);color:#fff;border:none;border-radius:12px;
+  padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:.15s;
+}
+.login-btn:hover{background:#d63f4b;}
+.login-btn:disabled{background:#cbd5e1;cursor:not-allowed;}
+
+/* HEADER */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:60px;background:var(--panel);
+  border-bottom:1px solid var(--border);border-top:4px solid var(--primary);
+  position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-icon{width:34px;height:34px;background:var(--primary);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;}
+.brand-name{font-size:15px;font-weight:800;}
+.user-info{display:flex;align-items:center;gap:10px;}
+.user-badge{background:var(--primary-bg);color:var(--primary);border:1px solid var(--primary-mid);
+  border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;}
+.logout-btn{background:none;border:1px solid var(--border);border-radius:8px;
+  padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--muted);}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* TABS */
+.tabs{display:flex;gap:4px;padding:16px 24px 0;border-bottom:1px solid var(--border);background:var(--panel);}
+.tab{padding:10px 18px;cursor:pointer;border-bottom:3px solid transparent;
+  font-weight:500;color:var(--muted);transition:.2s;border-radius:6px 6px 0 0;}
+.tab:hover{color:var(--text);background:#f8fafc;}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600;}
+
+/* MAIN */
+main{padding:24px;max-width:1200px;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
+.stat-card{background:var(--panel);border-radius:12px;padding:18px 20px;
+  border:1px solid var(--border);box-shadow:var(--shadow);}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.stat-value{font-size:26px;font-weight:800;margin-top:4px;}
+.stat-card.visits .stat-value{color:var(--blue);}
+.stat-card.customers .stat-value{color:var(--green);}
+.stat-card.pending .stat-value{color:var(--yellow);}
+
+/* PANEL */
+.panel{background:var(--panel);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);}
+.panel-title{font-size:15px;font-weight:700;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{background:#f8fafc;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#fafbfc;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;}
+.badge-approved{background:var(--green-bg);color:var(--green);}
+.badge-pending{background:var(--yellow-bg);color:var(--yellow);}
+.badge-rejected{background:var(--red-bg);color:var(--red);}
+.badge-a{background:#fdf4ff;color:#9333ea;}
+.badge-b{background:var(--blue-bg);color:var(--blue);}
+.badge-c{background:#f1f5f9;color:var(--muted);}
+
+/* VISIT COUNTER */
+.visit-counter{display:inline-flex;align-items:center;gap:8px;}
+.visit-num{font-size:16px;font-weight:800;color:var(--blue);min-width:24px;text-align:center;}
+.visit-btn{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;
+  font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.visit-btn.plus{background:var(--blue-bg);color:var(--blue);}
+.visit-btn.plus:hover{background:#bfdbfe;}
+.visit-btn.log{background:var(--green-bg);color:var(--green);font-size:14px;}
+.visit-btn.log:hover{background:#bbf7d0;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.15s;font-family:inherit;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:#d63f4b;}
+.btn-ghost{background:#f1f5f9;color:var(--text);}
+.btn-ghost:hover{background:#e2e8f0;}
+.btn-blue{background:var(--blue-bg);color:var(--blue);}
+.btn-blue:hover{background:#bfdbfe;}
+.btn-sm{padding:5px 10px;font-size:12px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);
+  display:none;align-items:center;justify-content:center;z-index:200;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--panel);border-radius:16px;width:500px;max-width:95vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;max-height:90vh;overflow-y:auto;}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--panel);}
+.modal-title{font-size:16px;font-weight:700;}
+.modal-close{cursor:pointer;font-size:20px;color:var(--muted);background:none;border:none;}
+.modal-body{padding:22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--panel);}
+
+/* FORM */
+.form-group{margin-bottom:16px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text);}
+.form-input,.form-select,.form-textarea{
+  width:100%;border:1px solid var(--border);border-radius:8px;
+  padding:9px 12px;font-size:14px;font-family:inherit;outline:none;background:#fff;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary);}
+.form-textarea{resize:vertical;min-height:80px;}
+.required{color:var(--red);}
+
+/* VISIT LOG */
+.visit-item{padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);margin-bottom:10px;}
+.visit-item-date{font-weight:700;font-size:13px;color:var(--text);}
+.visit-item-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+
+/* EMPTY */
+.empty{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-icon{font-size:44px;margin-bottom:10px;}
+.loading{display:flex;align-items:center;gap:10px;padding:40px;color:var(--muted);justify-content:center;}
+.spinner{width:20px;height:20px;border:2px solid var(--border);
+  border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;
+  border-radius:10px;padding:12px 20px;font-size:13px;font-weight:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:999;
+  transform:translateY(100px);opacity:0;transition:.3s;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:4px solid var(--green);}
+.toast.error{border-left:4px solid var(--red);}
+
+/* PAGE */
+.page{display:none;}.page.active{display:block;}
+#app{display:none;}
+</style>
+</head>
+<body>
+
+<!-- ══════ LOGIN SCREEN ══════ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-icon">💊</div>
+    <div class="login-title">MedRep Portal</div>
+    <div class="login-sub">Pilot Sales · Internal Use</div>
+    <div class="form-group" style="text-align:left">
+      <label class="form-label">Username</label>
+      <input class="form-input" id="loginUser" placeholder="sale" value="sale" readonly
+        style="background:#f8fafc;color:var(--muted);">
+    </div>
+    <div class="form-group" style="text-align:left;margin-bottom:8px">
+      <label class="form-label">Password (your area code)</label>
+      <input class="form-input" id="loginPass" type="password" placeholder="Enter your area code…"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="loginError" style="color:var(--red);font-size:13px;margin-bottom:12px;min-height:18px;"></div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Enter Portal →</button>
+    <div style="margin-top:20px;font-size:12px;color:var(--muted);">
+      Area codes are provided by your manager.
+    </div>
+  </div>
+</div>
+
+<!-- ══════ APP ══════ -->
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">💊</div>
+      <div>
+        <div class="brand-name">MedRep Portal</div>
+      </div>
+    </div>
+    <div class="user-info">
+      <span class="user-badge">👤 <span id="headerName"></span></span>
+      <span style="font-size:12px;color:var(--muted);">📍 <span id="headerArea"></span></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="showPage('mycustomers',this)">👥 My Customers</div>
+    <div class="tab" onclick="showPage('addcustomer',this)">➕ Add New Customer</div>
+  </div>
+
+  <main>
+
+    <!-- ── PAGE: MY CUSTOMERS ── -->
+    <div id="page-mycustomers" class="page active">
+
+      <div class="stats">
+        <div class="stat-card customers">
+          <div class="stat-label">My Customers</div>
+          <div class="stat-value" id="s-total">—</div>
+        </div>
+        <div class="stat-card visits">
+          <div class="stat-label">Total Visits</div>
+          <div class="stat-value" id="s-visits">—</div>
+        </div>
+        <div class="stat-card pending">
+          <div class="stat-label">Pending Approval</div>
+          <div class="stat-value" id="s-pending">—</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">My Customer List</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="searchBox" type="text" placeholder="🔍 Search…"
+              style="border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;outline:none;width:180px;"
+              oninput="filterCustomers()">
+            <button class="btn btn-ghost btn-sm" onclick="loadMyCustomers()">🔄 Refresh</button>
+          </div>
+        </div>
+        <div id="myCustomerTable">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: ADD CUSTOMER ── -->
+    <div id="page-addcustomer" class="page">
+      <div class="panel" style="max-width:680px;">
+        <div class="panel-header">
+          <span class="panel-title">➕ Add New Customer</span>
+        </div>
+        <div style="padding:24px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Dr Name <span class="required">*</span></label>
+              <input class="form-input" id="f-drname" placeholder="e.g. Dr. Ahmed Mohamed">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hospital <span class="required">*</span></label>
+              <input class="form-input" id="f-hospital" placeholder="e.g. Cairo Medical Center">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Address</label>
+            <input class="form-input" id="f-address" placeholder="Street, City">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Product</label>
+              <select class="form-select" id="f-product">
+                <option value="">— Select Product —</option>
+                <option>Xaralto</option>
+                <option>Vissane</option>
+                <option>Arcoxia</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Class</label>
+              <select class="form-select" id="f-class">
+                <option value="C">C — New / Low</option>
+                <option value="B">B — Medium</option>
+                <option value="A">A — High Value</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Area</label>
+            <input class="form-input" id="f-area" readonly style="background:#f8fafc;color:var(--muted);">
+          </div>
+          <div style="display:flex;gap:10px;margin-top:8px;">
+            <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
+            <button class="btn btn-primary" onclick="submitNewCustomer()">➕ Submit Customer</button>
+          </div>
+          <div id="submitMsg" style="margin-top:14px;font-size:13px;"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════ MODAL: RECORD VISIT ══════ -->
+<div class="modal-overlay" id="visitModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📋 Record Visit</span>
+      <button class="modal-close" onclick="closeModal('visitModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--blue-bg);border-radius:10px;padding:14px 16px;margin-bottom:18px;">
+        <div style="font-weight:700;" id="visitDrName"></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;" id="visitHospital"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Visit Date</label>
+          <input class="form-input" type="date" id="v-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Product Discussed</label>
+          <select class="form-select" id="v-product">
+            <option value="">— None —</option>
+            <option>Xaralto</option>
+            <option>Vissane</option>
+            <option>Arcoxia</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Outcome</label>
+        <select class="form-select" id="v-outcome">
+          <option value="">— Select —</option>
+          <option>Interested</option>
+          <option>Will Consider</option>
+          <option>Already Prescribing</option>
+          <option>Not Interested</option>
+          <option>Follow Up Required</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="v-notes" placeholder="Additional notes about the visit…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('visitModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveVisit()">✓ Save Visit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: VISIT HISTORY ══════ -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="historyTitle">Visit History</span>
+      <button class="modal-close" onclick="closeModal('historyModal')">✕</button>
+    </div>
+    <div class="modal-body" id="historyBody">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://localhost:5000/api/customers';
+let me = null;           // current MedRep object
+let myCustomers = [];    // cached customer list
+let currentVisitID = null;
+
+// ── LOGIN ──────────────────────────────────────────
+window.onload = () => {};
+
+async function doLogin() {
+  const pass = document.getElementById('loginPass').value.trim();
+  const err  = document.getElementById('loginError');
+  const btn  = document.getElementById('loginBtn');
+  if (!pass) { err.textContent = 'Please enter your area code.'; return; }
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+  err.textContent = '';
+  try {
+    const res = await apiFetch(`${API}/login`, 'POST', { username: 'sale', password: pass });
+    if (res.role !== 'medrep') { err.textContent = 'Access denied.'; btn.textContent = 'Enter Portal →'; btn.disabled = false; return; }
+    me = res;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('headerName').textContent = me.name;
+    document.getElementById('headerArea').textContent = me.areaName;
+    document.getElementById('f-area').value = me.areaName;
+    loadMyCustomers();
+  } catch(e) {
+    err.textContent = '❌ Invalid area code. Please try again.';
+    btn.textContent = 'Enter Portal →'; btn.disabled = false;
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginPass').focus();
+  }
+}
+
+function logout() {
+  me = null; myCustomers = [];
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').textContent = '';
+}
+
+// ── NAVIGATION ──────────────────────────────────────
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ── LOAD MY CUSTOMERS ────────────────────────────────
+async function loadMyCustomers() {
+  document.getElementById('myCustomerTable').innerHTML =
+    '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try {
+    myCustomers = await apiFetch(`${API}/medrep/${me.medRepID}/list`);
+    updateStats();
+    renderCustomerTable(myCustomers);
+  } catch(e) {
+    document.getElementById('myCustomerTable').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+function updateStats() {
+  const total   = myCustomers.length;
+  const visits  = myCustomers.reduce((s, c) => s + (c.totalVisits || 0), 0);
+  const pending = myCustomers.filter(c => c.status === 'Pending').length;
+  document.getElementById('s-total').textContent   = total;
+  document.getElementById('s-visits').textContent  = visits;
+  document.getElementById('s-pending').textContent = pending;
+}
+
+function filterCustomers() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const filtered = myCustomers.filter(c =>
+    c.drName.toLowerCase().includes(q) || c.hospital.toLowerCase().includes(q));
+  renderCustomerTable(filtered);
+}
+
+function renderCustomerTable(data) {
+  if (!data.length) {
+    document.getElementById('myCustomerTable').innerHTML =
+      '<div class="empty"><div class="empty-icon">👥</div><p>No customers found.<br><small>Add your first customer →</small></p></div>';
+    return;
+  }
+  document.getElementById('myCustomerTable').innerHTML = `
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Dr Name</th><th>Hospital</th><th>Product</th>
+        <th>Class</th><th>Status</th><th style="text-align:center">Visits</th><th>Last Visit</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        ${data.map(c => `
+          <tr>
+            <td><strong>${c.drName}</strong></td>
+            <td><span style="color:var(--muted)">${c.hospital}</span></td>
+            <td>${productBadge(c.product)}</td>
+            <td><span class="badge badge-${(c.class||'c').toLowerCase()}">${c.class||'—'}</span></td>
+            <td><span class="badge badge-${(c.status||'').toLowerCase()}">${statusIcon(c.status)} ${c.status}</span></td>
+            <td style="text-align:center">
+              <div class="visit-counter">
+                <span class="visit-num" id="vc-${c.customerID}">${c.totalVisits||0}</span>
+                <button class="visit-btn plus" title="Quick +1 visit"
+                  onclick="quickVisit(${c.customerID},'${esc(c.drName)}','${esc(c.hospital)}')">+</button>
+                <button class="visit-btn log" title="Log detailed visit"
+                  onclick="openVisitModal(${c.customerID},'${esc(c.drName)}','${esc(c.hospital)}')">📋</button>
+              </div>
+            </td>
+            <td style="font-size:12px;color:var(--muted)">${fmtDate(c.lastVisitDate)}</td>
+            <td>
+              <button class="btn btn-blue btn-sm" onclick="openHistory(${c.customerID},'${esc(c.drName)}')">
+                📅 History
+              </button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+// ── QUICK +1 VISIT ────────────────────────────────────
+async function quickVisit(id, drName, hospital) {
+  try {
+    const res = await apiFetch(`${API}/${id}/visit`, 'POST', {
+      medRepID: me.medRepID,
+      visitDate: new Date().toISOString(),
+      notes: 'Quick visit',
+      outcome: null
+    });
+    // Update counter in UI
+    const el = document.getElementById(`vc-${id}`);
+    if (el) el.textContent = res.totalVisits;
+    // Update local cache
+    const c = myCustomers.find(x => x.customerID === id);
+    if (c) { c.totalVisits = res.totalVisits; c.lastVisitDate = new Date().toISOString(); }
+    updateStats();
+    showToast(`✅ Visit recorded for ${drName}`, 'success');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── DETAILED VISIT MODAL ──────────────────────────────
+function openVisitModal(id, drName, hospital) {
+  currentVisitID = id;
+  document.getElementById('visitDrName').textContent  = drName;
+  document.getElementById('visitHospital').textContent = hospital;
+  document.getElementById('v-date').value    = new Date().toISOString().slice(0,10);
+  document.getElementById('v-product').value = '';
+  document.getElementById('v-outcome').value = '';
+  document.getElementById('v-notes').value   = '';
+  openModal('visitModal');
+}
+
+async function saveVisit() {
+  const productName = document.getElementById('v-product').value;
+  const body = {
+    medRepID:  me.medRepID,
+    visitDate: document.getElementById('v-date').value,
+    notes:     document.getElementById('v-notes').value   || null,
+    outcome:   document.getElementById('v-outcome').value || null
+  };
+  try {
+    const res = await apiFetch(`${API}/${currentVisitID}/visit`, 'POST', body);
+    closeModal('visitModal');
+    const el = document.getElementById(`vc-${currentVisitID}`);
+    if (el) el.textContent = res.totalVisits;
+    const c = myCustomers.find(x => x.customerID === currentVisitID);
+    if (c) { c.totalVisits = res.totalVisits; c.lastVisitDate = body.visitDate; }
+    updateStats();
+    showToast('✅ Visit saved successfully!', 'success');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── VISIT HISTORY ─────────────────────────────────────
+async function openHistory(id, drName) {
+  document.getElementById('historyTitle').textContent = `📅 ${drName} — Visits`;
+  document.getElementById('historyBody').innerHTML =
+    '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  openModal('historyModal');
+  try {
+    const visits = await apiFetch(`${API}/${id}/visits`);
+    if (!visits.length) {
+      document.getElementById('historyBody').innerHTML =
+        '<div class="empty"><div class="empty-icon">📅</div><p>No visits recorded yet</p></div>';
+      return;
+    }
+    document.getElementById('historyBody').innerHTML = visits.map(v => `
+      <div class="visit-item">
+        <div class="visit-item-date">📅 ${fmtDate(v.visitDate)}</div>
+        <div class="visit-item-meta">
+          ${v.product ? `💊 ${v.product} &nbsp;·&nbsp;` : ''}
+          ${v.outcome ? `🎯 ${v.outcome} &nbsp;·&nbsp;` : ''}
+          👤 ${v.medRep}
+        </div>
+        ${v.notes ? `<div style="margin-top:6px;font-size:13px;color:var(--text)">${v.notes}</div>` : ''}
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('historyBody').innerHTML = `<p style="color:var(--red)">${e.message}</p>`;
+  }
+}
+
+// ── ADD NEW CUSTOMER ──────────────────────────────────
+async function submitNewCustomer() {
+  const drName   = document.getElementById('f-drname').value.trim();
+  const hospital = document.getElementById('f-hospital').value.trim();
+  const msg = document.getElementById('submitMsg');
+
+  if (!drName || !hospital) {
+    msg.innerHTML = '<span style="color:var(--red)">⚠️ Dr Name and Hospital are required.</span>';
+    return;
+  }
+
+  const payload = {
+    drName,
+    hospital,
+    address:      document.getElementById('f-address').value.trim(),
+    area:         me.areaName,
+    medRepEmail:  me.email,
+    product:      document.getElementById('f-product').value,
+    class:        document.getElementById('f-class').value
+  };
+
+  msg.innerHTML = '<span style="color:var(--muted)">⏳ Submitting…</span>';
+  try {
+    const res = await apiFetch(`${API}/from-google-form`, 'POST', payload);
+    if (res.customerID === -1) {
+      msg.innerHTML = `<span style="color:var(--yellow)">⚠️ Duplicate detected — this doctor at this hospital already exists (ID: ${res.existingCustomerID}).</span>`;
+    } else {
+      msg.innerHTML = '<span style="color:var(--green)">✅ Customer submitted! Waiting for admin approval.</span>';
+      clearForm();
+      setTimeout(() => loadMyCustomers(), 800);
+    }
+  } catch(e) {
+    msg.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span>`;
+  }
+}
+
+function clearForm() {
+  ['f-drname','f-hospital','f-address'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-product').value = '';
+  document.getElementById('f-class').value   = 'C';
+  document.getElementById('submitMsg').innerHTML = '';
+}
+
+// ── HELPERS ────────────────────────────────────────────
+async function apiFetch(url, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+function productBadge(p) {
+  if (!p) return '<span style="color:var(--muted)">—</span>';
+  const c = p==='Xaralto'?'#e84855':p==='Vissane'?'#0ea5e9':'#d97706';
+  return `<span style="color:${c};font-weight:600">${p}</span>`;
+}
+function statusIcon(s) { return s==='Approved'?'✅':s==='Rejected'?'✕':'⏳'; }
+function esc(s){ return (s||'').replace(/'/g,"\\'"); }
+</script>
+</body>
+</html>
