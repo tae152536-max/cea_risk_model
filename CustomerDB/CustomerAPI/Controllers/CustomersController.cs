@@ -576,6 +576,121 @@ public class CustomersController : ControllerBase
     }
 
     // ------------------------------------------------------------------
+    // GET api/customers/medrep/{medRepId}/visits  — all visits by a MedRep
+    // ------------------------------------------------------------------
+    [HttpGet("medrep/{medRepId}/visits")]
+    public async Task<IActionResult> GetMedRepVisits(int medRepId)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+        var sql = @"
+            SELECT v.[VisitID], v.[VisitDate], c.[CustomerID], c.[DrName], c.[Hospital],
+                   p.[ProductName] AS Product, v.[Notes], v.[Outcome], v.[CreatedAt]
+            FROM [dbo].[Visits] v
+            INNER JOIN [dbo].[Customers] c ON c.[CustomerID] = v.[CustomerID]
+            LEFT  JOIN [dbo].[Products]  p ON p.[ProductID]  = v.[ProductID]
+            WHERE v.[MedRepID] = @mid
+            ORDER BY v.[VisitDate] DESC, v.[CreatedAt] DESC";
+        await using var cmd = new SqlCommand(sql, cn);
+        cmd.Parameters.AddWithValue("@mid", medRepId);
+        var list = new List<object>();
+        await using var r = await cmd.ExecuteReaderAsync();
+        while (await r.ReadAsync())
+            list.Add(new {
+                VisitID    = r["VisitID"],
+                VisitDate  = r["VisitDate"],
+                CustomerID = r["CustomerID"],
+                DrName     = r["DrName"],
+                Hospital   = r["Hospital"],
+                Product    = r["Product"],
+                Notes      = r["Notes"],
+                Outcome    = r["Outcome"]
+            });
+        return Ok(list);
+    }
+
+    // ------------------------------------------------------------------
+    // PATCH api/customers/{id}/edit  — MedRep edits own customer within 3 days
+    // ------------------------------------------------------------------
+    [HttpPatch("{id}/edit")]
+    public async Task<IActionResult> EditCustomer(int id, [FromBody] CustomerEditRequest req)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+
+        // Validate ownership, status, and time window
+        await using var checkCmd = new SqlCommand(
+            "SELECT MedRepID, Status, CreatedAt FROM dbo.Customers WHERE CustomerID=@id AND IsActive=1", cn);
+        checkCmd.Parameters.AddWithValue("@id", id);
+        await using var cr = await checkCmd.ExecuteReaderAsync();
+        if (!await cr.ReadAsync()) return NotFound(new { Message = "Customer not found." });
+        var ownerID   = (int)cr["MedRepID"];
+        var status    = cr["Status"]?.ToString();
+        var createdAt = (DateTime)cr["CreatedAt"];
+        await cr.DisposeAsync();
+
+        if (ownerID != req.MedRepID)
+            return StatusCode(403, new { Message = "You do not own this customer record." });
+        if ((DateTime.UtcNow - createdAt).TotalDays > 3)
+            return BadRequest(new { Message = "Edit window has expired (3 days after submission)." });
+        if (status == "Approved" || status == "Rejected")
+            return BadRequest(new { Message = $"Cannot edit a customer with status '{status}'." });
+
+        int? productId = await LookupProductAsync(cn, req.Product ?? "");
+
+        await using var cmd = new SqlCommand(@"
+            UPDATE dbo.Customers
+            SET DrName    = COALESCE(NULLIF(@drName,''),   DrName),
+                Hospital  = COALESCE(NULLIF(@hospital,''), Hospital),
+                Address   = COALESCE(@address, Address),
+                ProductID = CASE WHEN @prodId IS NULL THEN ProductID ELSE @prodId END,
+                Class     = COALESCE(NULLIF(@class,''),    Class),
+                UpdatedAt = GETDATE()
+            WHERE CustomerID = @id", cn);
+        cmd.Parameters.AddWithValue("@drName",   req.DrName   ?? "");
+        cmd.Parameters.AddWithValue("@hospital", req.Hospital ?? "");
+        cmd.Parameters.AddWithValue("@address",  (object?)req.Address ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@prodId",   (object?)productId   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@class",    req.Class    ?? "");
+        cmd.Parameters.AddWithValue("@id",       id);
+        await cmd.ExecuteNonQueryAsync();
+        return Ok(new { Message = "Customer updated successfully." });
+    }
+
+    // ------------------------------------------------------------------
+    // DELETE api/customers/{id}  — MedRep deletes own customer within 3 days
+    // ------------------------------------------------------------------
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCustomer(int id, [FromQuery] int medRepId)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+
+        await using var checkCmd = new SqlCommand(
+            "SELECT MedRepID, Status, CreatedAt FROM dbo.Customers WHERE CustomerID=@id AND IsActive=1", cn);
+        checkCmd.Parameters.AddWithValue("@id", id);
+        await using var cr = await checkCmd.ExecuteReaderAsync();
+        if (!await cr.ReadAsync()) return NotFound(new { Message = "Customer not found." });
+        var ownerID   = (int)cr["MedRepID"];
+        var status    = cr["Status"]?.ToString();
+        var createdAt = (DateTime)cr["CreatedAt"];
+        await cr.DisposeAsync();
+
+        if (ownerID != medRepId)
+            return StatusCode(403, new { Message = "You do not own this customer record." });
+        if ((DateTime.UtcNow - createdAt).TotalDays > 3)
+            return BadRequest(new { Message = "Delete window has expired (3 days after submission)." });
+        if (status == "Approved")
+            return BadRequest(new { Message = "Cannot delete an approved customer. Contact your admin." });
+
+        await using var cmd = new SqlCommand(
+            "UPDATE dbo.Customers SET IsActive=0, UpdatedAt=GETDATE() WHERE CustomerID=@id", cn);
+        cmd.Parameters.AddWithValue("@id", id);
+        await cmd.ExecuteNonQueryAsync();
+        return Ok(new { Message = "Customer deleted." });
+    }
+
+    // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
     private static async Task<int> LookupAreaAsync(SqlConnection cn, string areaName)

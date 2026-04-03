@@ -115,6 +115,9 @@ tr:hover td{background:#fafbfc;}
 .visit-btn.plus:hover{background:#bfdbfe;}
 .visit-btn.log{background:var(--green-bg);color:var(--green);font-size:14px;}
 .visit-btn.log:hover{background:#bbf7d0;}
+.visit-btn.checkin{background:#fef3c7;color:#d97706;font-size:14px;}
+.visit-btn.checkin:hover{background:#fde68a;}
+.visit-btn.checkin.checked-in{background:#d1fae5;color:#059669;}
 
 /* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
@@ -227,6 +230,7 @@ tr:hover td{background:#fafbfc;}
   <div class="tabs">
     <div class="tab active" onclick="showPage('mycustomers',this)">👥 My Customers</div>
     <div class="tab" onclick="showPage('addcustomer',this)">➕ Add New Customer</div>
+    <div class="tab" onclick="showPage('visits',this)">📋 Visits</div>
   </div>
 
   <main>
@@ -260,6 +264,19 @@ tr:hover td{background:#fafbfc;}
           </div>
         </div>
         <div id="myCustomerTable">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: VISITS ── -->
+    <div id="page-visits" class="page">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">📋 My Visit History</span>
+          <button class="btn btn-ghost btn-sm" onclick="loadVisits()">🔄 Refresh</button>
+        </div>
+        <div id="visitsTable">
           <div class="loading"><div class="spinner"></div> Loading…</div>
         </div>
       </div>
@@ -335,6 +352,84 @@ tr:hover td{background:#fafbfc;}
   </main>
 </div>
 
+<!-- ══════ MODAL: EDIT CUSTOMER ══════ -->
+<div class="modal-overlay" id="editCustomerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Customer</span>
+      <button class="modal-close" onclick="closeModal('editCustomerModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--yellow-bg);border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400e;">
+        ⏱️ You can edit or delete this customer within <strong>3 days</strong> of submission. After that, contact your admin.
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Dr Name</label>
+          <input class="form-input" id="ec-drname" placeholder="e.g. Dr. Smith">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hospital</label>
+          <input class="form-input" id="ec-hospital" placeholder="Hospital name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input class="form-input" id="ec-address" placeholder="Street, District, Province">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Product</label>
+          <select class="form-select" id="ec-product">
+            <option value="">— Select Product —</option>
+            <option>Xaralto</option>
+            <option>Vissane</option>
+            <option>Arcoxia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Class</label>
+          <select class="form-select" id="ec-class">
+            <option value="C">C — New / Low</option>
+            <option value="B">B — Medium</option>
+            <option value="A">A — High Value</option>
+          </select>
+        </div>
+      </div>
+      <div id="ec-msg" style="font-size:13px;min-height:18px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editCustomerModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditCustomer()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: CHECK IN ══════ -->
+<div class="modal-overlay" id="checkInModal">
+  <div class="modal" style="width:360px;">
+    <div class="modal-header">
+      <span class="modal-title">📍 Check In</span>
+      <button class="modal-close" onclick="closeModal('checkInModal')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <div style="font-size:40px;margin-bottom:8px;">📍</div>
+      <div style="font-weight:700;font-size:15px;" id="ci-drName"></div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:16px;" id="ci-hospital"></div>
+      <div id="ci-status" style="font-size:13px;color:var(--muted);margin-bottom:16px;">Getting your location…</div>
+      <div id="ci-info" style="background:var(--blue-bg);border-radius:10px;padding:12px 16px;font-size:12px;text-align:left;display:none;">
+        <div>🕐 <strong>Time:</strong> <span id="ci-time"></span></div>
+        <div style="margin-top:6px;">📌 <strong>Location:</strong> <span id="ci-location"></span></div>
+        <div style="margin-top:6px;"><a id="ci-maplink" href="#" target="_blank" style="color:var(--blue);font-size:12px;">🗺️ View on Google Maps</a></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('checkInModal')">Close</button>
+      <button class="btn btn-primary" id="ci-saveBtn" onclick="saveCheckIn()" style="display:none;">✓ Save Check In</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ MODAL: RECORD VISIT ══════ -->
 <div class="modal-overlay" id="visitModal">
   <div class="modal">
@@ -347,32 +442,51 @@ tr:hover td{background:#fafbfc;}
         <div style="font-weight:700;" id="visitDrName"></div>
         <div style="font-size:12px;color:var(--muted);margin-top:3px;" id="visitHospital"></div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Visit Date</label>
-          <input class="form-input" type="date" id="v-date">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Product Discussed</label>
-          <select class="form-select" id="v-product">
-            <option value="">— None —</option>
-            <option>Xaralto</option>
-            <option>Vissane</option>
-            <option>Arcoxia</option>
-          </select>
-        </div>
-      </div>
       <div class="form-group">
-        <label class="form-label">Outcome</label>
-        <select class="form-select" id="v-outcome">
-          <option value="">— Select —</option>
-          <option>Interested</option>
-          <option>Will Consider</option>
-          <option>Already Prescribing</option>
-          <option>Not Interested</option>
-          <option>Follow Up Required</option>
-        </select>
+        <label class="form-label">Visit Date</label>
+        <input class="form-input" type="date" id="v-date">
       </div>
+
+      <div class="form-group">
+        <label class="form-label">Activity <span class="required">*</span></label>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="act-propose" value="Propose Sale" style="width:16px;height:16px;accent-color:var(--primary);">
+            💼 Propose Sale
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="act-presentation" value="Product Presentation" style="width:16px;height:16px;accent-color:var(--primary);">
+            📊 Product Presentation
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="act-market" value="Market Visit" style="width:16px;height:16px;accent-color:var(--primary);">
+            🗺️ Market Visit
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="act-research" value="Market Research" style="width:16px;height:16px;accent-color:var(--primary);">
+            🔍 Market Research
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Products Discussed <span style="font-size:11px;color:var(--muted)">(select one or more)</span></label>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="prod-xaralto" value="Xaralto" style="width:16px;height:16px;accent-color:var(--primary);">
+            💊 Xaralto
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="prod-vissane" value="Vissane" style="width:16px;height:16px;accent-color:var(--primary);">
+            💊 Vissane
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="prod-arcoxia" value="Arcoxia" style="width:16px;height:16px;accent-color:var(--primary);">
+            💊 Arcoxia
+          </label>
+        </div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Notes</label>
         <textarea class="form-textarea" id="v-notes" placeholder="Additional notes about the visit…"></textarea>
@@ -454,6 +568,7 @@ function showPage(name, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   if (el) el.classList.add('active');
+  if (name === 'visits') loadVisits();
 }
 
 // ── LOAD MY CUSTOMERS ────────────────────────────────
@@ -509,6 +624,8 @@ function renderCustomerTable(data) {
             <td style="text-align:center">
               <div class="visit-counter">
                 <span class="visit-num" id="vc-${c.customerID}">${c.totalVisits||0}</span>
+                <button class="visit-btn checkin" id="ci-${c.customerID}" title="Check In"
+                  onclick="checkIn(${c.customerID},'${esc(c.drName)}','${esc(c.hospital)}')">📍</button>
                 <button class="visit-btn plus" title="Quick +1 visit"
                   onclick="quickVisit(${c.customerID},'${esc(c.drName)}','${esc(c.hospital)}')">+</button>
                 <button class="visit-btn log" title="Log detailed visit"
@@ -517,9 +634,16 @@ function renderCustomerTable(data) {
             </td>
             <td style="font-size:12px;color:var(--muted)">${fmtDate(c.lastVisitDate)}</td>
             <td>
-              <button class="btn btn-blue btn-sm" onclick="openHistory(${c.customerID},'${esc(c.drName)}')">
-                📅 History
-              </button>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                <button class="btn btn-blue btn-sm" onclick="openHistory(${c.customerID},'${esc(c.drName)}')">
+                  📅 History
+                </button>
+                ${canEdit(c) ? `
+                <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;"
+                  onclick="openEditCustomer(${c.customerID})" title="Edit (available for 3 days)">✏️ Edit</button>
+                <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid #fecaca;"
+                  onclick="deleteCustomer(${c.customerID},'${esc(c.drName)}')" title="Delete">🗑️</button>` : ''}
+              </div>
             </td>
           </tr>`).join('')}
       </tbody>
@@ -551,20 +675,33 @@ function openVisitModal(id, drName, hospital) {
   currentVisitID = id;
   document.getElementById('visitDrName').textContent  = drName;
   document.getElementById('visitHospital').textContent = hospital;
-  document.getElementById('v-date').value    = new Date().toISOString().slice(0,10);
-  document.getElementById('v-product').value = '';
-  document.getElementById('v-outcome').value = '';
-  document.getElementById('v-notes').value   = '';
+  document.getElementById('v-date').value = new Date().toISOString().slice(0,10);
+  ['act-propose','act-presentation','act-market','act-research'].forEach(id => document.getElementById(id).checked = false);
+  ['prod-xaralto','prod-vissane','prod-arcoxia'].forEach(id => document.getElementById(id).checked = false);
+  document.getElementById('v-notes').value = '';
   openModal('visitModal');
 }
 
 async function saveVisit() {
-  const productName = document.getElementById('v-product').value;
+  // Collect activities
+  const activities = ['act-propose','act-presentation','act-market','act-research']
+    .filter(id => document.getElementById(id).checked)
+    .map(id => document.getElementById(id).value);
+  // Collect products
+  const products = ['prod-xaralto','prod-vissane','prod-arcoxia']
+    .filter(id => document.getElementById(id).checked)
+    .map(id => document.getElementById(id).value);
+
+  const outcome = activities.length ? activities.join(', ') : null;
+  const notesBase = document.getElementById('v-notes').value || '';
+  const productsNote = products.length ? `Products: ${products.join(', ')}` : '';
+  const notes = [productsNote, notesBase].filter(Boolean).join(' | ') || null;
+
   const body = {
     medRepID:  me.medRepID,
     visitDate: document.getElementById('v-date').value,
-    notes:     document.getElementById('v-notes').value   || null,
-    outcome:   document.getElementById('v-outcome').value || null
+    notes,
+    outcome
   };
   try {
     const res = await apiFetch(`${API}/${currentVisitID}/visit`, 'POST', body);
@@ -655,6 +792,91 @@ function clearForm() {
   document.getElementById('f-product').value = '';
   document.getElementById('f-class').value   = 'C';
   document.getElementById('submitMsg').innerHTML = '';
+}
+
+// ── VISITS TAB ────────────────────────────────────────
+async function loadVisits() {
+  const container = document.getElementById('visitsTable');
+  if (!container) return;
+  container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try {
+    const visits = await apiFetch(`${API}/medrep/${me.medRepID}/visits`);
+    if (!visits.length) {
+      container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No visits recorded yet.<br><small>Record your first visit from My Customers →</small></p></div>';
+      return;
+    }
+    container.innerHTML = `
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Date</th><th>Dr Name</th><th>Hospital</th>
+          <th>Activity</th><th>Notes</th>
+        </tr></thead>
+        <tbody>
+          ${visits.map(v => `
+            <tr>
+              <td style="white-space:nowrap;font-weight:600;font-size:13px">${fmtDate(v.visitDate)}</td>
+              <td><strong>${v.drName}</strong></td>
+              <td style="color:var(--muted);font-size:13px">${v.hospital}</td>
+              <td>${v.outcome ? `<span style="font-size:12px;background:var(--blue-bg);color:var(--blue);padding:2px 8px;border-radius:12px">${v.outcome}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+              <td style="font-size:12px;color:var(--muted);max-width:220px">${v.notes || '—'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`;
+  } catch(e) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+// ── EDIT / DELETE CUSTOMER (within 3 days) ─────────────
+function canEdit(c) {
+  if (c.status !== 'Pending') return false;
+  const created = new Date(c.createdAt);
+  const diffDays = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
+  return diffDays <= 3;
+}
+
+let editingCustomerID = null;
+
+function openEditCustomer(id) {
+  const c = myCustomers.find(x => x.customerID === id);
+  if (!c) return;
+  editingCustomerID = id;
+  document.getElementById('ec-drname').value   = c.drName   || '';
+  document.getElementById('ec-hospital').value  = c.hospital || '';
+  document.getElementById('ec-address').value   = c.address  || '';
+  document.getElementById('ec-product').value   = c.product  || '';
+  document.getElementById('ec-class').value     = c.class    || 'C';
+  document.getElementById('ec-msg').innerHTML   = '';
+  openModal('editCustomerModal');
+}
+
+async function saveEditCustomer() {
+  const msg = document.getElementById('ec-msg');
+  msg.innerHTML = '<span style="color:var(--muted)">⏳ Saving…</span>';
+  try {
+    await apiFetch(`${API}/${editingCustomerID}/edit`, 'PATCH', {
+      medRepID: me.medRepID,
+      drName:   document.getElementById('ec-drname').value.trim(),
+      hospital: document.getElementById('ec-hospital').value.trim(),
+      address:  document.getElementById('ec-address').value.trim(),
+      product:  document.getElementById('ec-product').value,
+      class:    document.getElementById('ec-class').value
+    });
+    closeModal('editCustomerModal');
+    showToast('✅ Customer updated!', 'success');
+    loadMyCustomers();
+  } catch(e) {
+    msg.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span>`;
+  }
+}
+
+async function deleteCustomer(id, drName) {
+  if (!confirm(`Delete "${drName}"?\n\nThis cannot be undone.`)) return;
+  try {
+    await apiFetch(`${API}/${id}?medRepId=${me.medRepID}`, 'DELETE');
+    showToast(`🗑️ ${drName} has been deleted.`, 'success');
+    loadMyCustomers();
+  } catch(e) { showToast('❌ ' + e.message, 'error'); }
 }
 
 // ── THAILAND GEO ──────────────────────────────────────
@@ -759,6 +981,66 @@ function onProvinceChange() {
 }
 
 function onSubdistrictChange() { /* address composed on submit */ }
+
+// ── CHECK IN ──────────────────────────────────────────
+let currentCheckIn = { customerID: null, drName: '', hospital: '', lat: null, lng: null };
+
+function checkIn(id, drName, hospital) {
+  currentCheckIn = { customerID: id, drName, hospital, lat: null, lng: null };
+  document.getElementById('ci-drName').textContent   = drName;
+  document.getElementById('ci-hospital').textContent = hospital;
+  document.getElementById('ci-status').textContent   = '📡 Getting your location…';
+  document.getElementById('ci-info').style.display   = 'none';
+  document.getElementById('ci-saveBtn').style.display = 'none';
+  openModal('checkInModal');
+
+  if (!navigator.geolocation) {
+    document.getElementById('ci-status').textContent = '❌ Geolocation not supported on this device.';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const acc = Math.round(pos.coords.accuracy);
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('th-TH') + ' ' + now.toLocaleDateString('th-TH');
+      currentCheckIn.lat = lat;
+      currentCheckIn.lng = lng;
+      currentCheckIn.time = now.toISOString();
+
+      document.getElementById('ci-status').textContent = `✅ Location found (±${acc}m accuracy)`;
+      document.getElementById('ci-time').textContent = timeStr;
+      document.getElementById('ci-location').textContent = `${lat}, ${lng}`;
+      document.getElementById('ci-maplink').href = `https://www.google.com/maps?q=${lat},${lng}`;
+      document.getElementById('ci-info').style.display = 'block';
+      document.getElementById('ci-saveBtn').style.display = 'inline-flex';
+    },
+    err => {
+      const msgs = { 1:'Location permission denied.', 2:'Location unavailable.', 3:'Location request timed out.' };
+      document.getElementById('ci-status').textContent = '❌ ' + (msgs[err.code] || 'Location error.');
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+}
+
+async function saveCheckIn() {
+  const { customerID, drName, lat, lng, time } = currentCheckIn;
+  const notes = `📍 Check In: ${lat}, ${lng} | ${new Date(time).toLocaleString('th-TH')}`;
+  try {
+    await apiFetch(`${API}/${customerID}/visit`, 'POST', {
+      medRepID:  me.medRepID,
+      visitDate: time ? time.slice(0,10) : new Date().toISOString().slice(0,10),
+      notes,
+      outcome:   'Check In'
+    });
+    const btn = document.getElementById(`ci-${customerID}`);
+    if (btn) { btn.classList.add('checked-in'); btn.title = `Checked in at ${new Date(time).toLocaleTimeString('th-TH')}`; }
+    closeModal('checkInModal');
+    showToast(`📍 Checked in at ${drName}!`, 'success');
+    loadMyCustomers();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
 
 // ── HELPERS ────────────────────────────────────────────
 async function apiFetch(url, method = 'GET', body = null) {
