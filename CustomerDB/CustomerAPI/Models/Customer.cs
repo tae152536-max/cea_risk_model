@@ -19,6 +19,14 @@ public class CustomerResult
     public string Message            { get; set; } = string.Empty;
 }
 
+public class MedRepRequest
+{
+    public string? FullName { get; set; }
+    public string? Email    { get; set; }
+    public string? Phone    { get; set; }
+    public int     AreaID   { get; set; }
+}
+
 public class LoginRequest
 {
     public string Username { get; set; } = string.Empty;
@@ -32,6 +40,13 @@ public class VisitRequest
     public int?      ProductID  { get; set; }
     public string?   Notes      { get; set; }
     public string?   Outcome    { get; set; }
+}
+
+public class AreaRequest
+{
+    public string  AreaName { get; set; } = string.Empty;
+    public string  AreaCode { get; set; } = string.Empty;
+    public string? Region   { get; set; }
 }
 
 public class DuplicateResult
