@@ -49,6 +49,16 @@ public class AreaRequest
     public string? Region   { get; set; }
 }
 
+public class CustomerEditRequest
+{
+    public int     MedRepID  { get; set; }
+    public string? DrName    { get; set; }
+    public string? Hospital  { get; set; }
+    public string? Address   { get; set; }
+    public string? Product   { get; set; }
+    public string? Class     { get; set; }
+}
+
 public class DuplicateResult
 {
     public int    CustomerID { get; set; }
