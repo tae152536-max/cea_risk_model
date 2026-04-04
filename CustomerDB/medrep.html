@@ -1344,7 +1344,17 @@ async function apiFetch(url, method = 'GET', body = null) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(url, opts);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const err = await res.json();
+      if (err.message || err.Message) detail += ': ' + (err.message || err.Message);
+      else if (typeof err === 'string') detail += ': ' + err;
+    } catch(_) {
+      try { const t = await res.text(); if (t) detail += ': ' + t.slice(0,200); } catch(_) {}
+    }
+    throw new Error(detail);
+  }
   return res.json();
 }
 

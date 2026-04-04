@@ -23,6 +23,12 @@ public class CustomersController : ControllerBase
     [HttpPost("from-google-form")]
     public async Task<IActionResult> FromGoogleForm([FromBody] GoogleFormPayload payload)
     {
+        try { return await FromGoogleFormInner(payload); }
+        catch (Exception ex) { return StatusCode(500, new { Message = ex.Message, Detail = ex.InnerException?.Message }); }
+    }
+
+    private async Task<IActionResult> FromGoogleFormInner(GoogleFormPayload payload)
+    {
         if (string.IsNullOrWhiteSpace(payload.DrName) ||
             string.IsNullOrWhiteSpace(payload.Hospital) ||
             string.IsNullOrWhiteSpace(payload.MedRepEmail))
@@ -107,7 +113,7 @@ public class CustomersController : ControllerBase
         catch { /* CustomerProducts table may not exist yet — run Migration_CustomerProducts.sql */ }
 
         return Ok(result);
-    }
+    } // end FromGoogleFormInner
 
     // ------------------------------------------------------------------
     // GET api/customers?medRepId=5&areaId=0
