@@ -17,6 +17,7 @@ public class GoogleFormPayload
     public string Product     { get; set; } = string.Empty;   // first/legacy
     public string Class       { get; set; } = "C";             // first/legacy
     public string Category    { get; set; } = "Hospital";      // Hospital | OTC
+    public string Specialty   { get; set; } = string.Empty;    // Doctor specialty (Hospital only)
     public List<ProductClassItem> Products { get; set; } = new(); // all products
 }
 

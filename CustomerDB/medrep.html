@@ -376,14 +376,55 @@ tr:hover td{background:#fafbfc;}
             <label class="form-label">Category <span class="required">*</span></label>
             <div style="display:flex;gap:12px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
-                <input type="radio" name="f-category" id="f-cat-hospital" value="Hospital" checked style="accent-color:var(--primary);">
+                <input type="radio" name="f-category" id="f-cat-hospital" value="Hospital" checked
+                  onchange="onCategoryChange()" style="accent-color:var(--primary);">
                 🏥 Hospital
               </label>
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
-                <input type="radio" name="f-category" id="f-cat-otc" value="OTC" style="accent-color:var(--primary);">
+                <input type="radio" name="f-category" id="f-cat-otc" value="OTC"
+                  onchange="onCategoryChange()" style="accent-color:var(--primary);">
                 💊 OTC (Drug Store)
               </label>
             </div>
+          </div>
+
+          <!-- Specialty — shown for Hospital only -->
+          <div class="form-group" id="f-specialty-group">
+            <label class="form-label">Doctor Specialty <span class="required">*</span></label>
+            <input class="form-input" id="f-specialty" list="specialty-list"
+              placeholder="Type to search specialty…" autocomplete="off">
+            <datalist id="specialty-list">
+              <option>Cardiology (หัวใจและหลอดเลือด)</option>
+              <option>Orthopedics (กระดูกและข้อ)</option>
+              <option>Neurology (ระบบประสาท)</option>
+              <option>Oncology (มะเร็งวิทยา)</option>
+              <option>Gastroenterology (ระบบทางเดินอาหาร)</option>
+              <option>Pulmonology (ระบบทางเดินหายใจ)</option>
+              <option>Nephrology (ไต)</option>
+              <option>Endocrinology (ต่อมไร้ท่อ)</option>
+              <option>Rheumatology (ข้ออักเสบและรูมาติก)</option>
+              <option>Dermatology (ผิวหนัง)</option>
+              <option>Ophthalmology (จักษุ)</option>
+              <option>ENT / Otolaryngology (หู คอ จมูก)</option>
+              <option>Urology (ระบบทางเดินปัสสาวะ)</option>
+              <option>Gynecology (นรีเวช)</option>
+              <option>Obstetrics (สูติกรรม)</option>
+              <option>Pediatrics (กุมารเวชศาสตร์)</option>
+              <option>Psychiatry (จิตเวช)</option>
+              <option>Anesthesiology (วิสัญญี)</option>
+              <option>Radiology (รังสีวิทยา)</option>
+              <option>Emergency Medicine (เวชศาสตร์ฉุกเฉิน)</option>
+              <option>Internal Medicine (อายุรกรรม)</option>
+              <option>Surgery (ศัลยกรรม)</option>
+              <option>Plastic Surgery (ศัลยกรรมตกแต่ง)</option>
+              <option>Hematology (โลหิตวิทยา)</option>
+              <option>Infectious Disease (โรคติดเชื้อ)</option>
+              <option>General Practice / Family Medicine (เวชศาสตร์ครอบครัว)</option>
+              <option>Sports Medicine (เวชศาสตร์การกีฬา)</option>
+              <option>Geriatrics (เวชศาสตร์ผู้สูงอายุ)</option>
+              <option>Allergy &amp; Immunology (ภูมิแพ้และภูมิคุ้มกัน)</option>
+              <option>Palliative Care (การดูแลแบบประคับประคอง)</option>
+            </datalist>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -734,7 +775,10 @@ function renderCustomerTable(data) {
       <tbody>
         ${data.map(c => `
           <tr>
-            <td><strong>${c.drName}</strong></td>
+            <td>
+              <strong>${c.drName}</strong>
+              ${c.specialty ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">🩺 ${c.specialty}</div>` : ''}
+            </td>
             <td><span style="color:var(--muted)">${c.hospital}</span></td>
             <td>${c.category === 'OTC'
               ? '<span style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">💊 OTC</span>'
@@ -868,18 +912,25 @@ async function submitNewCustomer() {
   const address = addressParts.join(', ');
 
   // Use first product for legacy field; send all products in new field
-  const category = document.querySelector('input[name="f-category"]:checked')?.value || 'Hospital';
+  const category  = document.querySelector('input[name="f-category"]:checked')?.value || 'Hospital';
+  const specialty = category === 'Hospital' ? (document.getElementById('f-specialty').value.trim() || '') : '';
+
+  if (category === 'Hospital' && !specialty) {
+    msg.innerHTML = '<span style="color:var(--red)">⚠️ Please enter the doctor\'s specialty.</span>';
+    return;
+  }
 
   const payload = {
     drName,
     hospital,
     address,
     category,
+    specialty,
     area:        me.areaName,
     medRepEmail: me.email,
     product:     selectedProducts[0].name,
     class:       selectedProducts[0].class,
-    products:    selectedProducts   // [{name, class}, ...]
+    products:    selectedProducts
   };
 
   msg.innerHTML = '<span style="color:var(--muted)">⏳ Submitting…</span>';
@@ -936,6 +987,8 @@ function clearForm() {
     if (sel) { sel.disabled = true; sel.style.opacity = '.4'; sel.value = 'C'; }
   });
   document.getElementById('f-cat-hospital').checked = true;
+  document.getElementById('f-specialty').value = '';
+  document.getElementById('f-specialty-group').style.display = 'block';
   document.getElementById('submitMsg').innerHTML = '';
 }
 
@@ -1214,6 +1267,15 @@ function onProvinceChange() {
 }
 
 function onSubdistrictChange() { /* address composed on submit */ }
+
+function onCategoryChange() {
+  const isHospital = document.getElementById('f-cat-hospital').checked;
+  const grp = document.getElementById('f-specialty-group');
+  if (grp) {
+    grp.style.display = isHospital ? 'block' : 'none';
+    if (!isHospital) document.getElementById('f-specialty').value = '';
+  }
+}
 
 // ── CHECK IN ──────────────────────────────────────────
 let currentCheckIn = { customerID: null, drName: '', hospital: '', lat: null, lng: null };

@@ -74,12 +74,13 @@ public class CustomersController : ControllerBase
         if (result.CustomerID == -2)
             return BadRequest(result); // area mismatch
 
-        // Set Category on the new customer
+        // Set Category + Specialty on the new customer
         await using var catCmd = new SqlCommand(
-            "UPDATE dbo.Customers SET Category=@cat WHERE CustomerID=@id", cn);
-        catCmd.Parameters.AddWithValue("@cat", category);
-        catCmd.Parameters.AddWithValue("@id",  result.CustomerID);
-        try { await catCmd.ExecuteNonQueryAsync(); } catch { /* column may not exist yet */ }
+            "UPDATE dbo.Customers SET Category=@cat, Specialty=@spec WHERE CustomerID=@id", cn);
+        catCmd.Parameters.AddWithValue("@cat",  category);
+        catCmd.Parameters.AddWithValue("@spec", (object?)(string.IsNullOrWhiteSpace(payload.Specialty) ? null : payload.Specialty) ?? DBNull.Value);
+        catCmd.Parameters.AddWithValue("@id",   result.CustomerID);
+        try { await catCmd.ExecuteNonQueryAsync(); } catch { /* columns may not exist yet */ }
 
         // Insert additional products into CustomerProducts table
         var allProducts = payload.Products.Any()
@@ -239,7 +240,8 @@ public class CustomersController : ControllerBase
             SELECT c.[CustomerID], c.[DrName], c.[Hospital], c.[Address],
                    a.[AreaName] AS Area, p.[ProductName] AS Product,
                    c.[Class], c.[Status], c.[TotalVisits], c.[LastVisitDate], c.[CreatedAt],
-                   ISNULL(c.[Category], 'Hospital') AS Category
+                   ISNULL(c.[Category], 'Hospital') AS Category,
+                   c.[Specialty]
             FROM [dbo].[Customers] c
             INNER JOIN [dbo].[Areas]    a ON a.[AreaID]   = c.[AreaID]
             LEFT  JOIN [dbo].[Products] p ON p.[ProductID]= c.[ProductID]
@@ -250,13 +252,14 @@ public class CustomersController : ControllerBase
         var list = new List<object>();
         await using var r = await cmd.ExecuteReaderAsync();
         var customers = new List<(int id, string drName, string hospital, string address, string area,
-            string product, string cls, string status, string category, object totalVisits, object lastVisit, object createdAt)>();
+            string product, string cls, string status, string category, string specialty, object totalVisits, object lastVisit, object createdAt)>();
         while (await r.ReadAsync())
             customers.Add((
                 (int)r["CustomerID"], r["DrName"].ToString()!, r["Hospital"].ToString()!,
                 r["Address"].ToString()!, r["Area"].ToString()!, r["Product"]?.ToString() ?? "",
                 r["Class"]?.ToString() ?? "", r["Status"].ToString()!,
                 r["Category"]?.ToString() ?? "Hospital",
+                r["Specialty"]?.ToString() ?? "",
                 r["TotalVisits"], r["LastVisitDate"], r["CreatedAt"]));
         await r.DisposeAsync();
 
@@ -285,6 +288,7 @@ public class CustomersController : ControllerBase
                 Class         = c.cls,
                 Status        = c.status,
                 Category      = c.category,
+                Specialty     = c.specialty,
                 TotalVisits   = c.totalVisits,
                 LastVisitDate = c.lastVisit,
                 CreatedAt     = c.createdAt,
