@@ -698,9 +698,7 @@ function renderCustomerTable(data) {
                 <span class="visit-num" id="vc-${c.customerID}">${c.totalVisits||0}</span>
                 <button class="visit-btn checkin" id="ci-${c.customerID}" title="Check In"
                   onclick="checkIn(${c.customerID},'${esc(c.drName)}','${esc(c.hospital)}')">📍</button>
-                <button class="visit-btn plus" title="Quick +1 visit"
-                  onclick="quickVisit(${c.customerID},'${esc(c.drName)}','${esc(c.hospital)}')">+</button>
-                <button class="visit-btn log" title="Log detailed visit"
+                <button class="visit-btn log" title="Log visit"
                   onclick="openVisitModal(${c.customerID},'${esc(c.drName)}','${esc(c.hospital)}')">📋</button>
               </div>
             </td>
@@ -720,26 +718,6 @@ function renderCustomerTable(data) {
           </tr>`).join('')}
       </tbody>
     </table></div>`;
-}
-
-// ── QUICK +1 VISIT ────────────────────────────────────
-async function quickVisit(id, drName, hospital) {
-  try {
-    const res = await apiFetch(`${API}/${id}/visit`, 'POST', {
-      medRepID: me.medRepID,
-      visitDate: new Date().toISOString(),
-      notes: 'Quick visit',
-      outcome: null
-    });
-    // Update counter in UI
-    const el = document.getElementById(`vc-${id}`);
-    if (el) el.textContent = res.totalVisits;
-    // Update local cache
-    const c = myCustomers.find(x => x.customerID === id);
-    if (c) { c.totalVisits = res.totalVisits; c.lastVisitDate = new Date().toISOString(); }
-    updateStats();
-    showToast(`✅ Visit recorded for ${drName}`, 'success');
-  } catch(e) { showToast('Error: ' + e.message, 'error'); }
 }
 
 // ── DETAILED VISIT MODAL ──────────────────────────────
@@ -868,14 +846,17 @@ function clearForm() {
 
 // ── VISITS TAB ────────────────────────────────────────
 async function loadVisits() {
-  // Populate customer dropdown from cached list
+  // Populate customer dropdown — load fresh if cache is empty
+  if (!myCustomers.length) {
+    try { myCustomers = await apiFetch(`${API}/medrep/${me.medRepID}/list`); updateStats(); } catch(_) {}
+  }
   const sel = document.getElementById('vp-customer');
   if (sel) {
-    const approved = myCustomers.filter(c => c.status === 'Approved');
+    const eligible = myCustomers.filter(c => c.status !== 'Rejected');
     sel.innerHTML = '<option value="">— Select Customer —</option>' +
-      approved.map(c => `<option value="${c.customerID}">${c.drName} — ${c.hospital}</option>`).join('');
-    if (!approved.length) {
-      sel.innerHTML = '<option value="">No approved customers yet</option>';
+      eligible.map(c => `<option value="${c.customerID}">${c.drName} — ${c.hospital}</option>`).join('');
+    if (!eligible.length) {
+      sel.innerHTML = '<option value="">No customers yet</option>';
     }
   }
   // Set today's date
