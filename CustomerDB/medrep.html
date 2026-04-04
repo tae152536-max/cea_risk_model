@@ -433,7 +433,7 @@ tr:hover td{background:#fafbfc;}
     </div>
     <div class="modal-body">
       <div style="background:var(--yellow-bg);border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400e;">
-        ⏱️ You can edit or delete this customer within <strong>3 days</strong> of submission. After that, contact your admin.
+        ✏️ You can edit or delete <strong>Pending</strong> customers. Once approved by admin, contact your admin for changes.
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -710,9 +710,10 @@ function renderCustomerTable(data) {
                 </button>
                 ${canEdit(c) ? `
                 <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;"
-                  onclick="openEditCustomer(${c.customerID})" title="Edit (available for 3 days)">✏️ Edit</button>
+                  onclick="openEditCustomer(${c.customerID})" title="Edit">✏️ Edit</button>` : ''}
+                ${canDelete(c) ? `
                 <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid #fecaca;"
-                  onclick="deleteCustomer(${c.customerID},'${esc(c.drName)}')" title="Delete">🗑️</button>` : ''}
+                  onclick="deleteCustomer(${c.customerID},'${esc(c.drName)}')" title="Delete">🗑️ Delete</button>` : ''}
               </div>
             </td>
           </tr>`).join('')}
@@ -942,11 +943,14 @@ async function saveVisitFromPage() {
 
 // ── EDIT / DELETE CUSTOMER (within 3 days) ─────────────
 function canEdit(c) {
-  // Only allow edit/delete on Pending customers within 3 days
-  if (!c.createdAt) return false;
-  if (c.status === 'Approved' || c.status === 'Rejected') return false;
-  const diffDays = (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-  return diffDays <= 3;
+  // Allow edit/delete only while still Pending (no time limit)
+  // Approved and Rejected are locked — contact admin
+  return c.status === 'Pending';
+}
+
+function canDelete(c) {
+  // Can delete any Pending customer — never Approved or Rejected
+  return c.status === 'Pending';
 }
 
 let editingCustomerID = null;

@@ -631,8 +631,6 @@ public class CustomersController : ControllerBase
 
         if (ownerID != req.MedRepID)
             return StatusCode(403, new { Message = "You do not own this customer record." });
-        if ((DateTime.UtcNow - createdAt).TotalDays > 3)
-            return BadRequest(new { Message = "Edit window has expired (3 days after submission)." });
         if (status == "Approved" || status == "Rejected")
             return BadRequest(new { Message = $"Cannot edit a customer with status '{status}'." });
 
@@ -678,8 +676,6 @@ public class CustomersController : ControllerBase
 
         if (ownerID != medRepId)
             return StatusCode(403, new { Message = "You do not own this customer record." });
-        if ((DateTime.UtcNow - createdAt).TotalDays > 3)
-            return BadRequest(new { Message = "Delete window has expired (3 days after submission)." });
         if (status == "Approved")
             return BadRequest(new { Message = "Cannot delete an approved customer. Contact your admin." });
 
