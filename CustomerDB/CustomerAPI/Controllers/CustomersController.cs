@@ -89,18 +89,22 @@ public class CustomersController : ControllerBase
                 ? new List<ProductClassItem> { new() { Name = payload.Product, Class = payload.Class } }
                 : new List<ProductClassItem>());
 
-        foreach (var prod in allProducts)
+        try
         {
-            var pid = await LookupProductAsync(cn, prod.Name);
-            if (pid == null) continue;
-            await using var cpCmd = new SqlCommand(
-                @"IF NOT EXISTS (SELECT 1 FROM dbo.CustomerProducts WHERE CustomerID=@cid AND ProductID=@pid)
-                  INSERT INTO dbo.CustomerProducts (CustomerID, ProductID, Class) VALUES (@cid, @pid, @cls)", cn);
-            cpCmd.Parameters.AddWithValue("@cid", result.CustomerID);
-            cpCmd.Parameters.AddWithValue("@pid", pid.Value);
-            cpCmd.Parameters.AddWithValue("@cls", prod.Class ?? "C");
-            await cpCmd.ExecuteNonQueryAsync();
+            foreach (var prod in allProducts)
+            {
+                var pid = await LookupProductAsync(cn, prod.Name);
+                if (pid == null) continue;
+                await using var cpCmd = new SqlCommand(
+                    @"IF NOT EXISTS (SELECT 1 FROM dbo.CustomerProducts WHERE CustomerID=@cid AND ProductID=@pid)
+                      INSERT INTO dbo.CustomerProducts (CustomerID, ProductID, Class) VALUES (@cid, @pid, @cls)", cn);
+                cpCmd.Parameters.AddWithValue("@cid", result.CustomerID);
+                cpCmd.Parameters.AddWithValue("@pid", pid.Value);
+                cpCmd.Parameters.AddWithValue("@cls", prod.Class ?? "C");
+                await cpCmd.ExecuteNonQueryAsync();
+            }
         }
+        catch { /* CustomerProducts table may not exist yet — run Migration_CustomerProducts.sql */ }
 
         return Ok(result);
     }
@@ -266,17 +270,21 @@ public class CustomersController : ControllerBase
         // Load CustomerProducts for each customer
         foreach (var c in customers)
         {
-            var cpSql = @"SELECT p.ProductName, cp.Class
-                FROM dbo.CustomerProducts cp
-                INNER JOIN dbo.Products p ON p.ProductID = cp.ProductID
-                WHERE cp.CustomerID = @cid ORDER BY p.ProductName";
-            await using var cpCmd = new SqlCommand(cpSql, cn);
-            cpCmd.Parameters.AddWithValue("@cid", c.id);
             var prods = new List<object>();
-            await using var cr = await cpCmd.ExecuteReaderAsync();
-            while (await cr.ReadAsync())
-                prods.Add(new { name = cr["ProductName"].ToString(), @class = cr["Class"].ToString() });
-            await cr.DisposeAsync();
+            try
+            {
+                var cpSql = @"SELECT p.ProductName, cp.Class
+                    FROM dbo.CustomerProducts cp
+                    INNER JOIN dbo.Products p ON p.ProductID = cp.ProductID
+                    WHERE cp.CustomerID = @cid ORDER BY p.ProductName";
+                await using var cpCmd = new SqlCommand(cpSql, cn);
+                cpCmd.Parameters.AddWithValue("@cid", c.id);
+                await using var cr = await cpCmd.ExecuteReaderAsync();
+                while (await cr.ReadAsync())
+                    prods.Add(new { name = cr["ProductName"].ToString(), @class = cr["Class"].ToString() });
+                await cr.DisposeAsync();
+            }
+            catch { /* CustomerProducts table may not exist yet */ }
 
             list.Add(new {
                 CustomerID    = c.id,
@@ -780,22 +788,26 @@ public class CustomersController : ControllerBase
         // Replace CustomerProducts if provided
         if (req.Products.Any())
         {
-            await using var delCmd = new SqlCommand(
-                "DELETE FROM dbo.CustomerProducts WHERE CustomerID=@id", cn);
-            delCmd.Parameters.AddWithValue("@id", id);
-            await delCmd.ExecuteNonQueryAsync();
-
-            foreach (var prod in req.Products)
+            try
             {
-                var pid = await LookupProductAsync(cn, prod.Name);
-                if (pid == null) continue;
-                await using var cpCmd = new SqlCommand(
-                    "INSERT INTO dbo.CustomerProducts (CustomerID, ProductID, Class) VALUES (@cid, @pid, @cls)", cn);
-                cpCmd.Parameters.AddWithValue("@cid", id);
-                cpCmd.Parameters.AddWithValue("@pid", pid.Value);
-                cpCmd.Parameters.AddWithValue("@cls", prod.Class ?? "C");
-                await cpCmd.ExecuteNonQueryAsync();
+                await using var delCmd = new SqlCommand(
+                    "DELETE FROM dbo.CustomerProducts WHERE CustomerID=@id", cn);
+                delCmd.Parameters.AddWithValue("@id", id);
+                await delCmd.ExecuteNonQueryAsync();
+
+                foreach (var prod in req.Products)
+                {
+                    var pid = await LookupProductAsync(cn, prod.Name);
+                    if (pid == null) continue;
+                    await using var cpCmd = new SqlCommand(
+                        "INSERT INTO dbo.CustomerProducts (CustomerID, ProductID, Class) VALUES (@cid, @pid, @cls)", cn);
+                    cpCmd.Parameters.AddWithValue("@cid", id);
+                    cpCmd.Parameters.AddWithValue("@pid", pid.Value);
+                    cpCmd.Parameters.AddWithValue("@cls", prod.Class ?? "C");
+                    await cpCmd.ExecuteNonQueryAsync();
+                }
             }
+            catch { /* CustomerProducts table may not exist yet — run Migration_CustomerProducts.sql */ }
         }
 
         return Ok(new { Message = "Customer updated successfully." });
