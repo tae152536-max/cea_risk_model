@@ -368,9 +368,63 @@ tr:hover td{background:#fafbfc;}
               <input class="form-input" id="f-drname" placeholder="e.g. Dr. Ahmed Mohamed">
             </div>
             <div class="form-group">
-              <label class="form-label">Hospital <span class="required">*</span></label>
-              <input class="form-input" id="f-hospital" placeholder="e.g. Cairo Medical Center">
+              <label class="form-label">Hospital / Drug Store Name <span class="required">*</span></label>
+              <input class="form-input" id="f-hospital" placeholder="e.g. Bangkok Hospital or Max Drugstore">
             </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category <span class="required">*</span></label>
+            <div style="display:flex;gap:12px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                <input type="radio" name="f-category" id="f-cat-hospital" value="Hospital" checked
+                  onchange="onCategoryChange()" style="accent-color:var(--primary);">
+                Hospital
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                <input type="radio" name="f-category" id="f-cat-otc" value="OTC"
+                  onchange="onCategoryChange()" style="accent-color:var(--primary);">
+                OTC (Drug Store)
+              </label>
+            </div>
+          </div>
+
+          <!-- Specialty — shown for Hospital only -->
+          <div class="form-group" id="f-specialty-group">
+            <label class="form-label">Doctor Specialty <span class="required">*</span></label>
+            <input class="form-input" id="f-specialty" list="specialty-list"
+              placeholder="Type to search specialty…" autocomplete="off">
+            <datalist id="specialty-list">
+              <option>Cardiology</option>
+              <option>Orthopedics</option>
+              <option>Neurology</option>
+              <option>Oncology</option>
+              <option>Gastroenterology</option>
+              <option>Pulmonology</option>
+              <option>Nephrology</option>
+              <option>Endocrinology</option>
+              <option>Rheumatology</option>
+              <option>Dermatology</option>
+              <option>Ophthalmology</option>
+              <option>ENT / Otolaryngology</option>
+              <option>Urology</option>
+              <option>Gynecology</option>
+              <option>Obstetrics</option>
+              <option>Pediatrics</option>
+              <option>Psychiatry</option>
+              <option>Anesthesiology</option>
+              <option>Radiology</option>
+              <option>Emergency Medicine</option>
+              <option>Internal Medicine</option>
+              <option>Surgery</option>
+              <option>Plastic Surgery</option>
+              <option>Hematology</option>
+              <option>Infectious Disease</option>
+              <option>General Practice / Family Medicine</option>
+              <option>Sports Medicine</option>
+              <option>Geriatrics</option>
+              <option>Allergy and Immunology</option>
+              <option>Palliative Care</option>
+            </datalist>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -715,14 +769,21 @@ function renderCustomerTable(data) {
   document.getElementById('myCustomerTable').innerHTML = `
     <div class="table-wrap"><table>
       <thead><tr>
-        <th>Dr Name</th><th>Hospital</th><th>Products & Class</th>
+        <th>Dr Name</th><th>Hospital / Drug Store</th><th>Category</th><th>Products & Class</th>
         <th>Status</th><th style="text-align:center">Visits</th><th>Last Visit</th><th>Actions</th>
       </tr></thead>
       <tbody>
         ${data.map(c => `
           <tr>
-            <td><strong>${c.drName}</strong></td>
+            <td>
+              <strong>${c.drName}</strong>
+              ${c.specialty ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">${c.specialty}</div>` : ''}
+            </td>
             <td><span style="color:var(--muted)">${c.hospital}</span></td>
+            <td>${c.category === 'OTC'
+              ? '<span style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">OTC</span>'
+              : '<span style="background:var(--blue-bg);color:var(--blue);border:1px solid #bfdbfe;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">Hospital</span>'
+            }</td>
             <td>${renderProductBadges(c)}</td>
             <td><span class="badge ${statusBadgeClass(c.status)}">${statusIcon(c.status)} ${c.status||'—'}</span></td>
             <td style="text-align:center">
@@ -851,15 +912,25 @@ async function submitNewCustomer() {
   const address = addressParts.join(', ');
 
   // Use first product for legacy field; send all products in new field
+  const category  = document.querySelector('input[name="f-category"]:checked')?.value || 'Hospital';
+  const specialty = category === 'Hospital' ? (document.getElementById('f-specialty').value.trim() || '') : '';
+
+  if (category === 'Hospital' && !specialty) {
+    msg.innerHTML = '<span style="color:var(--red)">⚠️ Please enter the doctor\'s specialty.</span>';
+    return;
+  }
+
   const payload = {
     drName,
     hospital,
     address,
+    category,
+    specialty,
     area:        me.areaName,
     medRepEmail: me.email,
     product:     selectedProducts[0].name,
     class:       selectedProducts[0].class,
-    products:    selectedProducts   // [{name, class}, ...]
+    products:    selectedProducts
   };
 
   msg.innerHTML = '<span style="color:var(--muted)">⏳ Submitting…</span>';
@@ -915,6 +986,9 @@ function clearForm() {
     if (cb)  cb.checked = false;
     if (sel) { sel.disabled = true; sel.style.opacity = '.4'; sel.value = 'C'; }
   });
+  document.getElementById('f-cat-hospital').checked = true;
+  document.getElementById('f-specialty').value = '';
+  document.getElementById('f-specialty-group').style.display = 'block';
   document.getElementById('submitMsg').innerHTML = '';
 }
 
@@ -1193,6 +1267,15 @@ function onProvinceChange() {
 }
 
 function onSubdistrictChange() { /* address composed on submit */ }
+
+function onCategoryChange() {
+  const isHospital = document.getElementById('f-cat-hospital').checked;
+  const grp = document.getElementById('f-specialty-group');
+  if (grp) {
+    grp.style.display = isHospital ? 'block' : 'none';
+    if (!isHospital) document.getElementById('f-specialty').value = '';
+  }
+}
 
 // ── CHECK IN ──────────────────────────────────────────
 let currentCheckIn = { customerID: null, drName: '', hospital: '', lat: null, lng: null };
