@@ -180,6 +180,10 @@ tr:hover td{background:#fafbfc;}
 /* PAGE */
 .page{display:none;}.page.active{display:block;}
 #app{display:none;}
+@media(max-width:768px){
+  .visits-grid{grid-template-columns:1fr !important;}
+  .stats{grid-template-columns:1fr 1fr !important;}
+}
 </style>
 </head>
 <body>
@@ -271,14 +275,82 @@ tr:hover td{background:#fafbfc;}
 
     <!-- ── PAGE: VISITS ── -->
     <div id="page-visits" class="page">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">📋 My Visit History</span>
-          <button class="btn btn-ghost btn-sm" onclick="loadVisits()">🔄 Refresh</button>
+      <div class="visits-grid" style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px;align-items:start;">
+
+        <!-- Record New Visit form -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">📋 Record New Visit</span>
+          </div>
+          <div style="padding:20px;">
+            <div class="form-group">
+              <label class="form-label">Customer <span class="required">*</span></label>
+              <select class="form-select" id="vp-customer">
+                <option value="">— Select Customer —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Visit Date</label>
+              <input class="form-input" type="date" id="vp-date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Activity <span class="required">*</span></label>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-act-propose" value="Propose Sale" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💼 Propose Sale
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-act-presentation" value="Product Presentation" style="width:16px;height:16px;accent-color:var(--primary);">
+                  📊 Product Presentation
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-act-market" value="Market Visit" style="width:16px;height:16px;accent-color:var(--primary);">
+                  🗺️ Market Visit
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-act-research" value="Market Research" style="width:16px;height:16px;accent-color:var(--primary);">
+                  🔍 Market Research
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Products Discussed <span style="font-size:11px;color:var(--muted)">(optional)</span></label>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-prod-xaralto" value="Xaralto" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Xaralto
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-prod-vissane" value="Vissane" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Vissane
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-prod-arcoxia" value="Arcoxia" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Arcoxia
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea class="form-textarea" id="vp-notes" placeholder="Additional notes about the visit…"></textarea>
+            </div>
+            <div id="vp-msg" style="font-size:13px;min-height:18px;margin-bottom:10px;"></div>
+            <button class="btn btn-primary" style="width:100%" onclick="saveVisitFromPage()">✓ Save Visit</button>
+          </div>
         </div>
-        <div id="visitsTable">
-          <div class="loading"><div class="spinner"></div> Loading…</div>
+
+        <!-- Visit History table -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">📅 Visit History</span>
+            <button class="btn btn-ghost btn-sm" onclick="loadVisits()">🔄 Refresh</button>
+          </div>
+          <div id="visitsTable">
+            <div class="loading"><div class="spinner"></div> Loading…</div>
+          </div>
         </div>
+
       </div>
     </div>
 
@@ -796,13 +868,27 @@ function clearForm() {
 
 // ── VISITS TAB ────────────────────────────────────────
 async function loadVisits() {
+  // Populate customer dropdown from cached list
+  const sel = document.getElementById('vp-customer');
+  if (sel) {
+    const approved = myCustomers.filter(c => c.status === 'Approved');
+    sel.innerHTML = '<option value="">— Select Customer —</option>' +
+      approved.map(c => `<option value="${c.customerID}">${c.drName} — ${c.hospital}</option>`).join('');
+    if (!approved.length) {
+      sel.innerHTML = '<option value="">No approved customers yet</option>';
+    }
+  }
+  // Set today's date
+  const vpDate = document.getElementById('vp-date');
+  if (vpDate && !vpDate.value) vpDate.value = new Date().toISOString().slice(0,10);
+
   const container = document.getElementById('visitsTable');
   if (!container) return;
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
   try {
     const visits = await apiFetch(`${API}/medrep/${me.medRepID}/visits`);
     if (!visits.length) {
-      container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No visits recorded yet.<br><small>Record your first visit from My Customers →</small></p></div>';
+      container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No visits recorded yet.<br><small>Use the form on the left to record your first visit.</small></p></div>';
       return;
     }
     container.innerHTML = `
@@ -824,6 +910,52 @@ async function loadVisits() {
       </table></div>`;
   } catch(e) {
     container.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+async function saveVisitFromPage() {
+  const msg = document.getElementById('vp-msg');
+  const customerID = document.getElementById('vp-customer').value;
+  if (!customerID) { msg.innerHTML = '<span style="color:var(--red)">⚠️ Please select a customer.</span>'; return; }
+
+  const activities = ['vp-act-propose','vp-act-presentation','vp-act-market','vp-act-research']
+    .filter(id => document.getElementById(id).checked)
+    .map(id => document.getElementById(id).value);
+  if (!activities.length) { msg.innerHTML = '<span style="color:var(--red)">⚠️ Please select at least one activity.</span>'; return; }
+
+  const products = ['vp-prod-xaralto','vp-prod-vissane','vp-prod-arcoxia']
+    .filter(id => document.getElementById(id).checked)
+    .map(id => document.getElementById(id).value);
+
+  const outcome = activities.join(', ');
+  const notesBase = document.getElementById('vp-notes').value.trim();
+  const productsNote = products.length ? `Products: ${products.join(', ')}` : '';
+  const notes = [productsNote, notesBase].filter(Boolean).join(' | ') || null;
+
+  msg.innerHTML = '<span style="color:var(--muted)">⏳ Saving…</span>';
+  try {
+    const res = await apiFetch(`${API}/${customerID}/visit`, 'POST', {
+      medRepID:  me.medRepID,
+      visitDate: document.getElementById('vp-date').value,
+      notes,
+      outcome
+    });
+    // Update visit counter in My Customers cache
+    const c = myCustomers.find(x => x.customerID === parseInt(customerID));
+    if (c) { c.totalVisits = res.totalVisits; }
+    updateStats();
+    // Reset form
+    ['vp-act-propose','vp-act-presentation','vp-act-market','vp-act-research',
+     'vp-prod-xaralto','vp-prod-vissane','vp-prod-arcoxia'].forEach(id => document.getElementById(id).checked = false);
+    document.getElementById('vp-notes').value = '';
+    document.getElementById('vp-customer').value = '';
+    msg.innerHTML = '<span style="color:var(--green)">✅ Visit saved!</span>';
+    setTimeout(() => { msg.innerHTML = ''; }, 2500);
+    // Refresh history table
+    loadVisits();
+    showToast('✅ Visit recorded!', 'success');
+  } catch(e) {
+    msg.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span>`;
   }
 }
 
