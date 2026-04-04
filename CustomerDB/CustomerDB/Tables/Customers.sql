@@ -32,7 +32,7 @@ CREATE TABLE [dbo].[Customers]
     CONSTRAINT [FK_Customers_Areas]    FOREIGN KEY ([AreaID])    REFERENCES [dbo].[Areas]    ([AreaID]),
     CONSTRAINT [FK_Customers_MedReps]  FOREIGN KEY ([MedRepID])  REFERENCES [dbo].[MedReps]  ([MedRepID]),
     CONSTRAINT [FK_Customers_Products] FOREIGN KEY ([ProductID]) REFERENCES [dbo].[Products] ([ProductID]),
-    CONSTRAINT [CK_Customers_Class]    CHECK ([Class] IN ('A','B','C'))
+    CONSTRAINT [CK_Customers_Class]    CHECK ([Class] IN ('A','B','C','D'))
 );
 
 CREATE NONCLUSTERED INDEX [IX_Customers_MedRep]  ON [dbo].[Customers] ([MedRepID]);

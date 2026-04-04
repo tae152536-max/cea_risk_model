@@ -8,7 +8,7 @@ BEGIN
         [ID]         INT IDENTITY(1,1) PRIMARY KEY,
         [CustomerID] INT NOT NULL,
         [ProductID]  INT NOT NULL,
-        [Class]      CHAR(1) NOT NULL DEFAULT 'C' CHECK ([Class] IN ('A','B','C','D')),
+        [Class]      NVARCHAR(10) NOT NULL DEFAULT 'C' CHECK ([Class] IN ('A','B','C','D')),
         [CreatedAt]  DATETIME NOT NULL DEFAULT GETDATE(),
         CONSTRAINT FK_CP_Customer FOREIGN KEY ([CustomerID]) REFERENCES [dbo].[Customers]([CustomerID]),
         CONSTRAINT FK_CP_Product  FOREIGN KEY ([ProductID])  REFERENCES [dbo].[Products]([ProductID]),
