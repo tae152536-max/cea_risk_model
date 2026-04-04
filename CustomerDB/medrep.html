@@ -102,6 +102,7 @@ tr:hover td{background:#fafbfc;}
 .badge-approved{background:var(--green-bg);color:var(--green);}
 .badge-pending{background:var(--yellow-bg);color:var(--yellow);}
 .badge-rejected{background:var(--red-bg);color:var(--red);}
+.badge-delete{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;}
 .badge-a{background:#fdf4ff;color:#9333ea;}
 .badge-b{background:var(--blue-bg);color:var(--blue);}
 .badge-c{background:#f1f5f9;color:var(--muted);}
@@ -433,7 +434,7 @@ tr:hover td{background:#fafbfc;}
     </div>
     <div class="modal-body">
       <div style="background:var(--yellow-bg);border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400e;">
-        ⏱️ You can edit or delete this customer within <strong>3 days</strong> of submission. After that, contact your admin.
+        ✏️ You can edit or delete <strong>Pending</strong> customers. Once approved by admin, contact your admin for changes.
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -692,7 +693,7 @@ function renderCustomerTable(data) {
             <td><span style="color:var(--muted)">${c.hospital}</span></td>
             <td>${productBadge(c.product)}</td>
             <td><span class="badge badge-${(c.class||'c').toLowerCase()}">${c.class||'—'}</span></td>
-            <td><span class="badge badge-${(c.status||'').toLowerCase()}">${statusIcon(c.status)} ${c.status}</span></td>
+            <td><span class="badge ${statusBadgeClass(c.status)}">${statusIcon(c.status)} ${c.status||'—'}</span></td>
             <td style="text-align:center">
               <div class="visit-counter">
                 <span class="visit-num" id="vc-${c.customerID}">${c.totalVisits||0}</span>
@@ -710,9 +711,12 @@ function renderCustomerTable(data) {
                 </button>
                 ${canEdit(c) ? `
                 <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;"
-                  onclick="openEditCustomer(${c.customerID})" title="Edit (available for 3 days)">✏️ Edit</button>
+                  onclick="openEditCustomer(${c.customerID})" title="Edit">✏️ Edit</button>` : ''}
+                ${c.status === 'Delete Requested' ? `
+                <span style="font-size:12px;color:var(--red);font-weight:600;">⏳ Delete Pending</span>` :
+                canDelete(c) ? `
                 <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid #fecaca;"
-                  onclick="deleteCustomer(${c.customerID},'${esc(c.drName)}')" title="Delete">🗑️</button>` : ''}
+                  onclick="requestDelete(${c.customerID},'${esc(c.drName)}')" title="Request deletion (admin must approve)">🗑️ Delete</button>` : ''}
               </div>
             </td>
           </tr>`).join('')}
@@ -942,10 +946,15 @@ async function saveVisitFromPage() {
 
 // ── EDIT / DELETE CUSTOMER (within 3 days) ─────────────
 function canEdit(c) {
-  if (c.status !== 'Pending') return false;
-  const created = new Date(c.createdAt);
-  const diffDays = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
-  return diffDays <= 3;
+  // Allow edit/delete only while still Pending (no time limit)
+  // Approved and Rejected are locked — contact admin
+  return c.status === 'Pending';
+}
+
+function canDelete(c) {
+  // Can request deletion for Pending or Approved customers
+  // (not if already requested, or Rejected)
+  return c.status === 'Pending' || c.status === 'Approved';
 }
 
 let editingCustomerID = null;
@@ -983,11 +992,11 @@ async function saveEditCustomer() {
   }
 }
 
-async function deleteCustomer(id, drName) {
-  if (!confirm(`Delete "${drName}"?\n\nThis cannot be undone.`)) return;
+async function requestDelete(id, drName) {
+  if (!confirm(`Request deletion of "${drName}"?\n\nYour admin will review and confirm the deletion.`)) return;
   try {
-    await apiFetch(`${API}/${id}?medRepId=${me.medRepID}`, 'DELETE');
-    showToast(`🗑️ ${drName} has been deleted.`, 'success');
+    await apiFetch(`${API}/${id}/request-delete?medRepId=${me.medRepID}`, 'POST');
+    showToast(`🗑️ Deletion request sent for ${drName}. Awaiting admin approval.`, 'success');
     loadMyCustomers();
   } catch(e) { showToast('❌ ' + e.message, 'error'); }
 }
@@ -1182,7 +1191,18 @@ function productBadge(p) {
   const c = p==='Xaralto'?'#e84855':p==='Vissane'?'#0ea5e9':'#d97706';
   return `<span style="color:${c};font-weight:600">${p}</span>`;
 }
-function statusIcon(s) { return s==='Approved'?'✅':s==='Rejected'?'✕':'⏳'; }
+function statusIcon(s) {
+  if (s==='Approved') return '✅';
+  if (s==='Rejected') return '✕';
+  if (s==='Delete Requested') return '🗑️';
+  return '⏳';
+}
+function statusBadgeClass(s) {
+  if (s==='Approved') return 'badge-approved';
+  if (s==='Rejected') return 'badge-rejected';
+  if (s==='Delete Requested') return 'badge-delete';
+  return 'badge-pending';
+}
 function esc(s){ return (s||'').replace(/'/g,"\\'"); }
 </script>
 </body>

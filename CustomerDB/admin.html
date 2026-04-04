@@ -653,13 +653,14 @@ function showPage(name) {
 async function loadStats() {
   try {
     const all = await apiFetch(`${API}/all`);
-    const pending  = all.filter(c => c.status === 'Pending').length;
+    const pending  = all.filter(c => c.status === 'Pending' || c.status === 'Delete Requested').length;
     const approved = all.filter(c => c.status === 'Approved').length;
     const rejected = all.filter(c => c.status === 'Rejected').length;
     document.getElementById('s-pending').textContent  = pending;
     document.getElementById('s-approved').textContent = approved;
     document.getElementById('s-rejected').textContent = rejected;
     document.getElementById('s-total').textContent    = all.length;
+    document.getElementById('pendingCount').textContent = pending;
     document.getElementById('pendingCount').textContent = pending;
   } catch(e) {}
 }
@@ -869,7 +870,7 @@ async function loadPending() {
       <div class="table-wrap"><table>
         <thead><tr>
           <th>Dr Name</th><th>Hospital</th><th>Area</th>
-          <th>Med Rep</th><th>Product</th><th>Class</th><th>Submitted</th><th>Actions</th>
+          <th>Med Rep</th><th>Product</th><th>Class</th><th>Type</th><th>Submitted</th><th>Actions</th>
         </tr></thead>
         <tbody>
           ${data.map(c => `
@@ -880,11 +881,21 @@ async function loadPending() {
               <td>${c.medRep}</td>
               <td>${c.product || '—'}</td>
               <td><span class="badge badge-${(c.class||'c').toLowerCase()}">${c.class || '—'}</span></td>
+              <td>${c.status === 'Delete Requested'
+                ? '<span style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:600;">🗑️ Delete Request</span>'
+                : '<span style="background:var(--yellow-bg);color:var(--yellow);border-radius:12px;padding:2px 10px;font-size:12px;font-weight:600;">⏳ New Customer</span>'}</td>
               <td style="color:var(--muted); font-size:12px">${fmtDate(c.createdAt)}</td>
               <td>
                 <div style="display:flex; gap:6px">
-                  <button class="btn btn-approve btn-sm" onclick="openApproveModal(${c.customerID})">✓ Approve</button>
-                  <button class="btn btn-reject btn-sm"  onclick="openRejectModal(${c.customerID})">✕ Reject</button>
+                  ${c.status === 'Delete Requested' ? `
+                    <button class="btn btn-sm" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;"
+                      onclick="approveDelete(${c.customerID},'${esc(c.drName)}')">🗑️ Approve Delete</button>
+                    <button class="btn btn-ghost btn-sm"
+                      onclick="rejectDelete(${c.customerID},'${esc(c.drName)}')">↩️ Keep</button>
+                  ` : `
+                    <button class="btn btn-approve btn-sm" onclick="openApproveModal(${c.customerID})">✓ Approve</button>
+                    <button class="btn btn-reject btn-sm"  onclick="openRejectModal(${c.customerID})">✕ Reject</button>
+                  `}
                 </div>
               </td>
             </tr>`).join('')}
@@ -1132,6 +1143,24 @@ async function populateModalInfo(id) {
     <div class="info-item"><label>Class</label><span>${c.class || '—'}</span></div>
     <div class="info-item"><label>Address</label><span>${c.address || '—'}</span></div>
     <div class="info-item"><label>Submitted</label><span>${fmtDate(c.createdAt)}</span></div>`;
+}
+
+async function approveDelete(id, drName) {
+  if (!confirm(`Permanently delete "${drName}"?\n\nThis cannot be undone.`)) return;
+  try {
+    await apiFetch(`${API}/${id}/approve?action=Delete&adminName=${encodeURIComponent(ADMIN)}`, 'PATCH');
+    showToast(`🗑️ ${drName} has been permanently deleted.`, 'error');
+    await loadPending(); await loadStats();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function rejectDelete(id, drName) {
+  if (!confirm(`Reject deletion request for "${drName}"?\n\nCustomer will remain as Approved.`)) return;
+  try {
+    await apiFetch(`${API}/${id}/approve?action=KeepApproved&adminName=${encodeURIComponent(ADMIN)}`, 'PATCH');
+    showToast(`↩️ Deletion rejected — ${drName} kept as Approved.`, 'success');
+    await loadPending(); await loadStats();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
 }
 
 async function doAction(action) {

@@ -313,10 +313,18 @@ public class CustomersController : ControllerBase
     {
         await using var cn = new SqlConnection(_conn);
         await cn.OpenAsync();
-        await using var cmd = new SqlCommand("usp_GetPendingCustomers", cn)
-        {
-            CommandType = System.Data.CommandType.StoredProcedure
-        };
+        // Also include Delete Requested customers in the pending queue
+        await using var cmd = new SqlCommand(@"
+            SELECT c.[CustomerID], c.[DrName], c.[Hospital], c.[Address],
+                   a.[AreaName] AS Area, a.[AreaID],
+                   m.[FullName] AS MedRep, m.[MedRepID],
+                   p.[ProductName] AS Product, c.[Class], c.[Status], c.[CreatedAt]
+            FROM [dbo].[Customers] c
+            INNER JOIN [dbo].[Areas]   a ON a.[AreaID]   = c.[AreaID]
+            INNER JOIN [dbo].[MedReps] m ON m.[MedRepID] = c.[MedRepID]
+            LEFT  JOIN [dbo].[Products] p ON p.[ProductID]= c.[ProductID]
+            WHERE c.[IsActive] = 1 AND c.[Status] IN ('Pending','Delete Requested')
+            ORDER BY c.[CreatedAt] ASC", cn);
         var list = new List<object>();
         await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
@@ -349,8 +357,32 @@ public class CustomersController : ControllerBase
         [FromQuery] string adminName = "Admin",
         [FromQuery] string? rejectReason = null)
     {
-        if (action != "Approve" && action != "Reject")
-            return BadRequest("action must be 'Approve' or 'Reject'");
+        if (action != "Approve" && action != "Reject" && action != "Delete" && action != "KeepApproved")
+            return BadRequest("action must be 'Approve', 'Reject', 'Delete', or 'KeepApproved'");
+
+        // Handle admin-approved deletion
+        if (action == "Delete")
+        {
+            await using var cn2 = new SqlConnection(_conn);
+            await cn2.OpenAsync();
+            await using var cmd2 = new SqlCommand(
+                "UPDATE dbo.Customers SET IsActive=0, UpdatedAt=GETDATE() WHERE CustomerID=@id", cn2);
+            cmd2.Parameters.AddWithValue("@id", id);
+            await cmd2.ExecuteNonQueryAsync();
+            return Ok(new { Message = "Customer permanently deleted." });
+        }
+
+        // Handle reject deletion request → revert to Approved
+        if (action == "KeepApproved")
+        {
+            await using var cn3 = new SqlConnection(_conn);
+            await cn3.OpenAsync();
+            await using var cmd3 = new SqlCommand(
+                "UPDATE dbo.Customers SET Status='Approved', UpdatedAt=GETDATE() WHERE CustomerID=@id", cn3);
+            cmd3.Parameters.AddWithValue("@id", id);
+            await cmd3.ExecuteNonQueryAsync();
+            return Ok(new { Message = "Deletion request rejected. Customer kept as Approved." });
+        }
 
         await using var cn = new SqlConnection(_conn);
         await cn.OpenAsync();
@@ -576,6 +608,36 @@ public class CustomersController : ControllerBase
     }
 
     // ------------------------------------------------------------------
+    // POST api/customers/{id}/request-delete  — MedRep requests deletion
+    // ------------------------------------------------------------------
+    [HttpPost("{id}/request-delete")]
+    public async Task<IActionResult> RequestDelete(int id, [FromQuery] int medRepId)
+    {
+        await using var cn = new SqlConnection(_conn);
+        await cn.OpenAsync();
+
+        await using var checkCmd = new SqlCommand(
+            "SELECT MedRepID, Status FROM dbo.Customers WHERE CustomerID=@id AND IsActive=1", cn);
+        checkCmd.Parameters.AddWithValue("@id", id);
+        await using var cr = await checkCmd.ExecuteReaderAsync();
+        if (!await cr.ReadAsync()) return NotFound(new { Message = "Customer not found." });
+        var ownerID = (int)cr["MedRepID"];
+        var status  = cr["Status"]?.ToString();
+        await cr.DisposeAsync();
+
+        if (ownerID != medRepId)
+            return StatusCode(403, new { Message = "You do not own this customer record." });
+        if (status == "Delete Requested")
+            return BadRequest(new { Message = "Deletion already requested." });
+
+        await using var cmd = new SqlCommand(
+            "UPDATE dbo.Customers SET Status='Delete Requested', UpdatedAt=GETDATE() WHERE CustomerID=@id", cn);
+        cmd.Parameters.AddWithValue("@id", id);
+        await cmd.ExecuteNonQueryAsync();
+        return Ok(new { Message = "Deletion request submitted. Awaiting admin approval." });
+    }
+
+    // ------------------------------------------------------------------
     // GET api/customers/medrep/{medRepId}/visits  — all visits by a MedRep
     // ------------------------------------------------------------------
     [HttpGet("medrep/{medRepId}/visits")]
@@ -631,8 +693,6 @@ public class CustomersController : ControllerBase
 
         if (ownerID != req.MedRepID)
             return StatusCode(403, new { Message = "You do not own this customer record." });
-        if ((DateTime.UtcNow - createdAt).TotalDays > 3)
-            return BadRequest(new { Message = "Edit window has expired (3 days after submission)." });
         if (status == "Approved" || status == "Rejected")
             return BadRequest(new { Message = $"Cannot edit a customer with status '{status}'." });
 
@@ -678,8 +738,6 @@ public class CustomersController : ControllerBase
 
         if (ownerID != medRepId)
             return StatusCode(403, new { Message = "You do not own this customer record." });
-        if ((DateTime.UtcNow - createdAt).TotalDays > 3)
-            return BadRequest(new { Message = "Delete window has expired (3 days after submission)." });
         if (status == "Approved")
             return BadRequest(new { Message = "Cannot delete an approved customer. Contact your admin." });
 
