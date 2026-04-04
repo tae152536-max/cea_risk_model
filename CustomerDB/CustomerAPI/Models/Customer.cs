@@ -1,15 +1,22 @@
 namespace CustomerAPI.Models;
 
+public class ProductClassItem
+{
+    public string Name  { get; set; } = string.Empty;
+    public string Class { get; set; } = "C";
+}
+
 // Payload sent from Google Forms via Apps Script
 public class GoogleFormPayload
 {
-    public string DrName    { get; set; } = string.Empty;
-    public string Hospital  { get; set; } = string.Empty;
-    public string Address   { get; set; } = string.Empty;
-    public string Area      { get; set; } = string.Empty;   // Area name (looked up to AreaID)
-    public string MedRepEmail { get; set; } = string.Empty; // used to identify MedRep
-    public string Product   { get; set; } = string.Empty;
-    public string Class     { get; set; } = "C";
+    public string DrName      { get; set; } = string.Empty;
+    public string Hospital    { get; set; } = string.Empty;
+    public string Address     { get; set; } = string.Empty;
+    public string Area        { get; set; } = string.Empty;
+    public string MedRepEmail { get; set; } = string.Empty;
+    public string Product     { get; set; } = string.Empty;   // first/legacy
+    public string Class       { get; set; } = "C";             // first/legacy
+    public List<ProductClassItem> Products { get; set; } = new(); // all products
 }
 
 public class CustomerResult
@@ -57,6 +64,7 @@ public class CustomerEditRequest
     public string? Address   { get; set; }
     public string? Product   { get; set; }
     public string? Class     { get; set; }
+    public List<ProductClassItem> Products { get; set; } = new();
 }
 
 public class DuplicateResult

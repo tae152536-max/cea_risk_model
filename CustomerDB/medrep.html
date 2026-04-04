@@ -390,23 +390,39 @@ tr:hover td{background:#fafbfc;}
             <label class="form-label">Address (Street / Building)</label>
             <input class="form-input" id="f-address" placeholder="Street, Building No. (optional)">
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Product</label>
-              <select class="form-select" id="f-product">
-                <option value="">— Select Product —</option>
-                <option>Xaralto</option>
-                <option>Vissane</option>
-                <option>Arcoxia</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Class</label>
-              <select class="form-select" id="f-class">
-                <option value="C">C — New / Low</option>
-                <option value="B">B — Medium</option>
-                <option value="A">A — High Value</option>
-              </select>
+          <div class="form-group">
+            <label class="form-label">Products & Class <span class="required">*</span> <span style="font-size:11px;color:var(--muted)">(select one or more)</span></label>
+            <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:6px 14px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">
+                <span>Product</span><span>Class</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                  <input type="checkbox" id="fp-xaralto" onchange="toggleProductClass('xaralto')" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Xaralto
+                </label>
+                <select class="form-select" id="fc-xaralto" disabled style="width:110px;opacity:.4;">
+                  <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+                </select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                  <input type="checkbox" id="fp-vissane" onchange="toggleProductClass('vissane')" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Vissane
+                </label>
+                <select class="form-select" id="fc-vissane" disabled style="width:110px;opacity:.4;">
+                  <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+                </select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;gap:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                  <input type="checkbox" id="fp-arcoxia" onchange="toggleProductClass('arcoxia')" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Arcoxia
+                </label>
+                <select class="form-select" id="fc-arcoxia" disabled style="width:110px;opacity:.4;">
+                  <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+                </select>
+              </div>
             </div>
           </div>
           <div class="form-group">
@@ -450,23 +466,39 @@ tr:hover td{background:#fafbfc;}
         <label class="form-label">Address</label>
         <input class="form-input" id="ec-address" placeholder="Street, District, Province">
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Product</label>
-          <select class="form-select" id="ec-product">
-            <option value="">— Select Product —</option>
-            <option>Xaralto</option>
-            <option>Vissane</option>
-            <option>Arcoxia</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Class</label>
-          <select class="form-select" id="ec-class">
-            <option value="C">C — New / Low</option>
-            <option value="B">B — Medium</option>
-            <option value="A">A — High Value</option>
-          </select>
+      <div class="form-group">
+        <label class="form-label">Products & Class</label>
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:6px 14px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">
+            <span>Product</span><span>Class</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+              <input type="checkbox" id="ep-xaralto" onchange="toggleProductClass('ep-xaralto','ec-xaralto')" style="width:16px;height:16px;accent-color:var(--primary);">
+              💊 Xaralto
+            </label>
+            <select class="form-select" id="ec-xaralto" disabled style="width:110px;opacity:.4;">
+              <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+              <input type="checkbox" id="ep-vissane" onchange="toggleProductClass('ep-vissane','ec-vissane')" style="width:16px;height:16px;accent-color:var(--primary);">
+              💊 Vissane
+            </label>
+            <select class="form-select" id="ec-vissane" disabled style="width:110px;opacity:.4;">
+              <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;gap:12px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+              <input type="checkbox" id="ep-arcoxia" onchange="toggleProductClass('ep-arcoxia','ec-arcoxia')" style="width:16px;height:16px;accent-color:var(--primary);">
+              💊 Arcoxia
+            </label>
+            <select class="form-select" id="ec-arcoxia" disabled style="width:110px;opacity:.4;">
+              <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+            </select>
+          </div>
         </div>
       </div>
       <div id="ec-msg" style="font-size:13px;min-height:18px;"></div>
@@ -683,16 +715,15 @@ function renderCustomerTable(data) {
   document.getElementById('myCustomerTable').innerHTML = `
     <div class="table-wrap"><table>
       <thead><tr>
-        <th>Dr Name</th><th>Hospital</th><th>Product</th>
-        <th>Class</th><th>Status</th><th style="text-align:center">Visits</th><th>Last Visit</th><th>Actions</th>
+        <th>Dr Name</th><th>Hospital</th><th>Products & Class</th>
+        <th>Status</th><th style="text-align:center">Visits</th><th>Last Visit</th><th>Actions</th>
       </tr></thead>
       <tbody>
         ${data.map(c => `
           <tr>
             <td><strong>${c.drName}</strong></td>
             <td><span style="color:var(--muted)">${c.hospital}</span></td>
-            <td>${productBadge(c.product)}</td>
-            <td><span class="badge badge-${(c.class||'c').toLowerCase()}">${c.class||'—'}</span></td>
+            <td>${renderProductBadges(c)}</td>
             <td><span class="badge ${statusBadgeClass(c.status)}">${statusIcon(c.status)} ${c.status||'—'}</span></td>
             <td style="text-align:center">
               <div class="visit-counter">
@@ -803,8 +834,13 @@ async function submitNewCustomer() {
   const hospital = document.getElementById('f-hospital').value.trim();
   const msg = document.getElementById('submitMsg');
 
+  const selectedProducts = getSelectedProducts('f');
   if (!drName || !hospital) {
     msg.innerHTML = '<span style="color:var(--red)">⚠️ Dr Name and Hospital are required.</span>';
+    return;
+  }
+  if (!selectedProducts.length) {
+    msg.innerHTML = '<span style="color:var(--red)">⚠️ Please select at least one product.</span>';
     return;
   }
 
@@ -814,14 +850,16 @@ async function submitNewCustomer() {
   const addressParts = [street, subdistrict, province].filter(Boolean);
   const address = addressParts.join(', ');
 
+  // Use first product for legacy field; send all products in new field
   const payload = {
     drName,
     hospital,
     address,
-    area:         me.areaName,
-    medRepEmail:  me.email,
-    product:      document.getElementById('f-product').value,
-    class:        document.getElementById('f-class').value
+    area:        me.areaName,
+    medRepEmail: me.email,
+    product:     selectedProducts[0].name,
+    class:       selectedProducts[0].class,
+    products:    selectedProducts   // [{name, class}, ...]
   };
 
   msg.innerHTML = '<span style="color:var(--muted)">⏳ Submitting…</span>';
@@ -839,12 +877,44 @@ async function submitNewCustomer() {
   }
 }
 
+// Enable/disable class dropdown when product checkbox toggled
+function toggleProductClass(product, classId) {
+  let cbId, selId;
+  if (classId === undefined) {
+    cbId  = 'fp-' + product;
+    selId = 'fc-' + product;
+  } else {
+    cbId  = product;
+    selId = classId;
+  }
+  const checked = document.getElementById(cbId).checked;
+  const sel     = document.getElementById(selId);
+  sel.disabled      = !checked;
+  sel.style.opacity = checked ? '1' : '.4';
+}
+
+// Collect checked products+class from a form (prefix 'f' = add form, 'e' = edit modal)
+function getSelectedProducts(prefix) {
+  const cbPfx  = prefix + 'p';
+  const selPfx = prefix + 'c';
+  return ['xaralto','vissane','arcoxia']
+    .filter(p => document.getElementById(`${cbPfx}-${p}`)?.checked)
+    .map(p => ({
+      name:  p.charAt(0).toUpperCase() + p.slice(1),
+      class: document.getElementById(`${selPfx}-${p}`)?.value || 'C'
+    }));
+}
+
 function clearForm() {
   ['f-drname','f-hospital','f-address'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('f-province').value    = '';
+  document.getElementById('f-province').value = '';
   document.getElementById('f-subdistrict').innerHTML = '<option value="">— Select Province first —</option>';
-  document.getElementById('f-product').value = '';
-  document.getElementById('f-class').value   = 'C';
+  ['xaralto','vissane','arcoxia'].forEach(p => {
+    const cb  = document.getElementById('fp-' + p);
+    const sel = document.getElementById('fc-' + p);
+    if (cb)  cb.checked = false;
+    if (sel) { sel.disabled = true; sel.style.opacity = '.4'; sel.value = 'C'; }
+  });
   document.getElementById('submitMsg').innerHTML = '';
 }
 
@@ -963,17 +1033,36 @@ function openEditCustomer(id) {
   const c = myCustomers.find(x => x.customerID === id);
   if (!c) return;
   editingCustomerID = id;
-  document.getElementById('ec-drname').value   = c.drName   || '';
-  document.getElementById('ec-hospital').value  = c.hospital || '';
-  document.getElementById('ec-address').value   = c.address  || '';
-  document.getElementById('ec-product').value   = c.product  || '';
-  document.getElementById('ec-class').value     = c.class    || 'C';
-  document.getElementById('ec-msg').innerHTML   = '';
+  document.getElementById('ec-drname').value  = c.drName   || '';
+  document.getElementById('ec-hospital').value = c.hospital || '';
+  document.getElementById('ec-address').value  = c.address  || '';
+  document.getElementById('ec-msg').innerHTML  = '';
+  // Reset all product checkboxes
+  ['xaralto','vissane','arcoxia'].forEach(p => {
+    const cb  = document.getElementById('ep-' + p);
+    const sel = document.getElementById('ec-' + p);
+    if (cb)  cb.checked = false;
+    if (sel) { sel.disabled = true; sel.style.opacity = '.4'; sel.value = 'C'; }
+  });
+  // Pre-tick existing products from customerProducts or legacy product field
+  const existingProducts = c.customerProducts || (c.product ? [{ name: c.product, class: c.class || 'C' }] : []);
+  existingProducts.forEach(p => {
+    const key = p.name.toLowerCase();
+    const cb  = document.getElementById('ep-' + key);
+    const sel = document.getElementById('ec-' + key);
+    if (cb)  { cb.checked = true; }
+    if (sel) { sel.disabled = false; sel.style.opacity = '1'; sel.value = p.class || 'C'; }
+  });
   openModal('editCustomerModal');
 }
 
 async function saveEditCustomer() {
   const msg = document.getElementById('ec-msg');
+  const selectedProducts = getSelectedProducts('e');
+  if (!selectedProducts.length) {
+    msg.innerHTML = '<span style="color:var(--red)">⚠️ Please select at least one product.</span>';
+    return;
+  }
   msg.innerHTML = '<span style="color:var(--muted)">⏳ Saving…</span>';
   try {
     await apiFetch(`${API}/${editingCustomerID}/edit`, 'PATCH', {
@@ -981,8 +1070,9 @@ async function saveEditCustomer() {
       drName:   document.getElementById('ec-drname').value.trim(),
       hospital: document.getElementById('ec-hospital').value.trim(),
       address:  document.getElementById('ec-address').value.trim(),
-      product:  document.getElementById('ec-product').value,
-      class:    document.getElementById('ec-class').value
+      product:  selectedProducts[0].name,
+      class:    selectedProducts[0].class,
+      products: selectedProducts
     });
     closeModal('editCustomerModal');
     showToast('✅ Customer updated!', 'success');
@@ -1186,10 +1276,22 @@ function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 }
+const PROD_COLORS = { Xaralto:'#e84855', Vissane:'#0ea5e9', Arcoxia:'#d97706' };
 function productBadge(p) {
   if (!p) return '<span style="color:var(--muted)">—</span>';
-  const c = p==='Xaralto'?'#e84855':p==='Vissane'?'#0ea5e9':'#d97706';
+  const c = PROD_COLORS[p] || '#6b7280';
   return `<span style="color:${c};font-weight:600">${p}</span>`;
+}
+function renderProductBadges(c) {
+  const prods = c.customerProducts?.length ? c.customerProducts
+    : c.product ? [{ name: c.product, class: c.class }] : [];
+  if (!prods.length) return '<span style="color:var(--muted)">—</span>';
+  return prods.map(p => {
+    const col = PROD_COLORS[p.name] || '#6b7280';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;margin:1px 2px;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;background:${col}18;color:${col};">
+      ${p.name} <span style="background:${col};color:#fff;border-radius:6px;padding:0 5px;font-size:11px;">${p.class||'?'}</span>
+    </span>`;
+  }).join('');
 }
 function statusIcon(s) {
   if (s==='Approved') return '✅';

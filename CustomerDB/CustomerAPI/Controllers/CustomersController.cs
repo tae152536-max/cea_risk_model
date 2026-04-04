@@ -72,6 +72,26 @@ public class CustomersController : ControllerBase
         if (result.CustomerID == -2)
             return BadRequest(result); // area mismatch
 
+        // Insert additional products into CustomerProducts table
+        var allProducts = payload.Products.Any()
+            ? payload.Products
+            : (!string.IsNullOrWhiteSpace(payload.Product)
+                ? new List<ProductClassItem> { new() { Name = payload.Product, Class = payload.Class } }
+                : new List<ProductClassItem>());
+
+        foreach (var prod in allProducts)
+        {
+            var pid = await LookupProductAsync(cn, prod.Name);
+            if (pid == null) continue;
+            await using var cpCmd = new SqlCommand(
+                @"IF NOT EXISTS (SELECT 1 FROM dbo.CustomerProducts WHERE CustomerID=@cid AND ProductID=@pid)
+                  INSERT INTO dbo.CustomerProducts (CustomerID, ProductID, Class) VALUES (@cid, @pid, @cls)", cn);
+            cpCmd.Parameters.AddWithValue("@cid", result.CustomerID);
+            cpCmd.Parameters.AddWithValue("@pid", pid.Value);
+            cpCmd.Parameters.AddWithValue("@cls", prod.Class ?? "C");
+            await cpCmd.ExecuteNonQueryAsync();
+        }
+
         return Ok(result);
     }
 
@@ -219,20 +239,46 @@ public class CustomersController : ControllerBase
         cmd.Parameters.AddWithValue("@MedRepID", medRepId);
         var list = new List<object>();
         await using var r = await cmd.ExecuteReaderAsync();
+        var customers = new List<(int id, string drName, string hospital, string address, string area,
+            string product, string cls, string status, object totalVisits, object lastVisit, object createdAt)>();
         while (await r.ReadAsync())
+            customers.Add((
+                (int)r["CustomerID"], r["DrName"].ToString()!, r["Hospital"].ToString()!,
+                r["Address"].ToString()!, r["Area"].ToString()!, r["Product"]?.ToString() ?? "",
+                r["Class"]?.ToString() ?? "", r["Status"].ToString()!,
+                r["TotalVisits"], r["LastVisitDate"], r["CreatedAt"]));
+        await r.DisposeAsync();
+
+        // Load CustomerProducts for each customer
+        foreach (var c in customers)
+        {
+            var cpSql = @"SELECT p.ProductName, cp.Class
+                FROM dbo.CustomerProducts cp
+                INNER JOIN dbo.Products p ON p.ProductID = cp.ProductID
+                WHERE cp.CustomerID = @cid ORDER BY p.ProductName";
+            await using var cpCmd = new SqlCommand(cpSql, cn);
+            cpCmd.Parameters.AddWithValue("@cid", c.id);
+            var prods = new List<object>();
+            await using var cr = await cpCmd.ExecuteReaderAsync();
+            while (await cr.ReadAsync())
+                prods.Add(new { name = cr["ProductName"].ToString(), @class = cr["Class"].ToString() });
+            await cr.DisposeAsync();
+
             list.Add(new {
-                CustomerID   = r["CustomerID"],
-                DrName       = r["DrName"],
-                Hospital     = r["Hospital"],
-                Address      = r["Address"],
-                Area         = r["Area"],
-                Product      = r["Product"],
-                Class        = r["Class"],
-                Status       = r["Status"],
-                TotalVisits  = r["TotalVisits"],
-                LastVisitDate= r["LastVisitDate"],
-                CreatedAt    = r["CreatedAt"]
+                CustomerID    = c.id,
+                DrName        = c.drName,
+                Hospital      = c.hospital,
+                Address       = c.address,
+                Area          = c.area,
+                Product       = c.product,
+                Class         = c.cls,
+                Status        = c.status,
+                TotalVisits   = c.totalVisits,
+                LastVisitDate = c.lastVisit,
+                CreatedAt     = c.createdAt,
+                CustomerProducts = prods
             });
+        }
         return Ok(list);
     }
 
@@ -696,7 +742,7 @@ public class CustomersController : ControllerBase
         if (status == "Approved" || status == "Rejected")
             return BadRequest(new { Message = $"Cannot edit a customer with status '{status}'." });
 
-        int? productId = await LookupProductAsync(cn, req.Product ?? "");
+        int? firstProductId = await LookupProductAsync(cn, req.Product ?? "");
 
         await using var cmd = new SqlCommand(@"
             UPDATE dbo.Customers
@@ -710,10 +756,32 @@ public class CustomersController : ControllerBase
         cmd.Parameters.AddWithValue("@drName",   req.DrName   ?? "");
         cmd.Parameters.AddWithValue("@hospital", req.Hospital ?? "");
         cmd.Parameters.AddWithValue("@address",  (object?)req.Address ?? DBNull.Value);
-        cmd.Parameters.AddWithValue("@prodId",   (object?)productId   ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@prodId",   (object?)firstProductId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@class",    req.Class    ?? "");
         cmd.Parameters.AddWithValue("@id",       id);
         await cmd.ExecuteNonQueryAsync();
+
+        // Replace CustomerProducts if provided
+        if (req.Products.Any())
+        {
+            await using var delCmd = new SqlCommand(
+                "DELETE FROM dbo.CustomerProducts WHERE CustomerID=@id", cn);
+            delCmd.Parameters.AddWithValue("@id", id);
+            await delCmd.ExecuteNonQueryAsync();
+
+            foreach (var prod in req.Products)
+            {
+                var pid = await LookupProductAsync(cn, prod.Name);
+                if (pid == null) continue;
+                await using var cpCmd = new SqlCommand(
+                    "INSERT INTO dbo.CustomerProducts (CustomerID, ProductID, Class) VALUES (@cid, @pid, @cls)", cn);
+                cpCmd.Parameters.AddWithValue("@cid", id);
+                cpCmd.Parameters.AddWithValue("@pid", pid.Value);
+                cpCmd.Parameters.AddWithValue("@cls", prod.Class ?? "C");
+                await cpCmd.ExecuteNonQueryAsync();
+            }
+        }
+
         return Ok(new { Message = "Customer updated successfully." });
     }
 
