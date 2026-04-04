@@ -378,12 +378,12 @@ tr:hover td{background:#fafbfc;}
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
                 <input type="radio" name="f-category" id="f-cat-hospital" value="Hospital" checked
                   onchange="onCategoryChange()" style="accent-color:var(--primary);">
-                🏥 Hospital
+                Hospital
               </label>
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
                 <input type="radio" name="f-category" id="f-cat-otc" value="OTC"
                   onchange="onCategoryChange()" style="accent-color:var(--primary);">
-                💊 OTC (Drug Store)
+                OTC (Drug Store)
               </label>
             </div>
           </div>
@@ -394,36 +394,36 @@ tr:hover td{background:#fafbfc;}
             <input class="form-input" id="f-specialty" list="specialty-list"
               placeholder="Type to search specialty…" autocomplete="off">
             <datalist id="specialty-list">
-              <option>Cardiology (หัวใจและหลอดเลือด)</option>
-              <option>Orthopedics (กระดูกและข้อ)</option>
-              <option>Neurology (ระบบประสาท)</option>
-              <option>Oncology (มะเร็งวิทยา)</option>
-              <option>Gastroenterology (ระบบทางเดินอาหาร)</option>
-              <option>Pulmonology (ระบบทางเดินหายใจ)</option>
-              <option>Nephrology (ไต)</option>
-              <option>Endocrinology (ต่อมไร้ท่อ)</option>
-              <option>Rheumatology (ข้ออักเสบและรูมาติก)</option>
-              <option>Dermatology (ผิวหนัง)</option>
-              <option>Ophthalmology (จักษุ)</option>
-              <option>ENT / Otolaryngology (หู คอ จมูก)</option>
-              <option>Urology (ระบบทางเดินปัสสาวะ)</option>
-              <option>Gynecology (นรีเวช)</option>
-              <option>Obstetrics (สูติกรรม)</option>
-              <option>Pediatrics (กุมารเวชศาสตร์)</option>
-              <option>Psychiatry (จิตเวช)</option>
-              <option>Anesthesiology (วิสัญญี)</option>
-              <option>Radiology (รังสีวิทยา)</option>
-              <option>Emergency Medicine (เวชศาสตร์ฉุกเฉิน)</option>
-              <option>Internal Medicine (อายุรกรรม)</option>
-              <option>Surgery (ศัลยกรรม)</option>
-              <option>Plastic Surgery (ศัลยกรรมตกแต่ง)</option>
-              <option>Hematology (โลหิตวิทยา)</option>
-              <option>Infectious Disease (โรคติดเชื้อ)</option>
-              <option>General Practice / Family Medicine (เวชศาสตร์ครอบครัว)</option>
-              <option>Sports Medicine (เวชศาสตร์การกีฬา)</option>
-              <option>Geriatrics (เวชศาสตร์ผู้สูงอายุ)</option>
-              <option>Allergy &amp; Immunology (ภูมิแพ้และภูมิคุ้มกัน)</option>
-              <option>Palliative Care (การดูแลแบบประคับประคอง)</option>
+              <option>Cardiology</option>
+              <option>Orthopedics</option>
+              <option>Neurology</option>
+              <option>Oncology</option>
+              <option>Gastroenterology</option>
+              <option>Pulmonology</option>
+              <option>Nephrology</option>
+              <option>Endocrinology</option>
+              <option>Rheumatology</option>
+              <option>Dermatology</option>
+              <option>Ophthalmology</option>
+              <option>ENT / Otolaryngology</option>
+              <option>Urology</option>
+              <option>Gynecology</option>
+              <option>Obstetrics</option>
+              <option>Pediatrics</option>
+              <option>Psychiatry</option>
+              <option>Anesthesiology</option>
+              <option>Radiology</option>
+              <option>Emergency Medicine</option>
+              <option>Internal Medicine</option>
+              <option>Surgery</option>
+              <option>Plastic Surgery</option>
+              <option>Hematology</option>
+              <option>Infectious Disease</option>
+              <option>General Practice / Family Medicine</option>
+              <option>Sports Medicine</option>
+              <option>Geriatrics</option>
+              <option>Allergy and Immunology</option>
+              <option>Palliative Care</option>
             </datalist>
           </div>
           <div class="form-row">
@@ -777,12 +777,12 @@ function renderCustomerTable(data) {
           <tr>
             <td>
               <strong>${c.drName}</strong>
-              ${c.specialty ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">🩺 ${c.specialty}</div>` : ''}
+              ${c.specialty ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">${c.specialty}</div>` : ''}
             </td>
             <td><span style="color:var(--muted)">${c.hospital}</span></td>
             <td>${c.category === 'OTC'
-              ? '<span style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">💊 OTC</span>'
-              : '<span style="background:var(--blue-bg);color:var(--blue);border:1px solid #bfdbfe;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">🏥 Hospital</span>'
+              ? '<span style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">OTC</span>'
+              : '<span style="background:var(--blue-bg);color:var(--blue);border:1px solid #bfdbfe;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">Hospital</span>'
             }</td>
             <td>${renderProductBadges(c)}</td>
             <td><span class="badge ${statusBadgeClass(c.status)}">${statusIcon(c.status)} ${c.status||'—'}</span></td>
