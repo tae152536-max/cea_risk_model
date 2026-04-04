@@ -942,9 +942,10 @@ async function saveVisitFromPage() {
 
 // ── EDIT / DELETE CUSTOMER (within 3 days) ─────────────
 function canEdit(c) {
-  if (c.status !== 'Pending') return false;
-  const created = new Date(c.createdAt);
-  const diffDays = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
+  // Only allow edit/delete on Pending customers within 3 days
+  if (!c.createdAt) return false;
+  if (c.status === 'Approved' || c.status === 'Rejected') return false;
+  const diffDays = (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24);
   return diffDays <= 3;
 }
 
@@ -984,6 +985,11 @@ async function saveEditCustomer() {
 }
 
 async function deleteCustomer(id, drName) {
+  const c = myCustomers.find(x => x.customerID === id);
+  if (c && c.status === 'Approved') {
+    showToast('❌ Cannot delete an approved customer. Contact your admin.', 'error');
+    return;
+  }
   if (!confirm(`Delete "${drName}"?\n\nThis cannot be undone.`)) return;
   try {
     await apiFetch(`${API}/${id}?medRepId=${me.medRepID}`, 'DELETE');
