@@ -16,6 +16,7 @@ public class GoogleFormPayload
     public string MedRepEmail { get; set; } = string.Empty;
     public string Product     { get; set; } = string.Empty;   // first/legacy
     public string Class       { get; set; } = "C";             // first/legacy
+    public string Category    { get; set; } = "Hospital";      // Hospital | OTC
     public List<ProductClassItem> Products { get; set; } = new(); // all products
 }
 

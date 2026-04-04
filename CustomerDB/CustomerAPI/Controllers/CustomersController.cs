@@ -57,6 +57,8 @@ public class CustomersController : ControllerBase
         cmd.Parameters.AddWithValue("@ProductID", (object?)productId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@Class",     payload.Class ?? "C");
         cmd.Parameters.AddWithValue("@ForceInsert", 0);
+        // Category param — add if SP supports it, otherwise set after insert
+        var category = payload.Category ?? "Hospital";
 
         var result = new CustomerResult();
         await using var reader = await cmd.ExecuteReaderAsync();
@@ -71,6 +73,13 @@ public class CustomersController : ControllerBase
             return Conflict(result);   // 409 — duplicate
         if (result.CustomerID == -2)
             return BadRequest(result); // area mismatch
+
+        // Set Category on the new customer
+        await using var catCmd = new SqlCommand(
+            "UPDATE dbo.Customers SET Category=@cat WHERE CustomerID=@id", cn);
+        catCmd.Parameters.AddWithValue("@cat", category);
+        catCmd.Parameters.AddWithValue("@id",  result.CustomerID);
+        try { await catCmd.ExecuteNonQueryAsync(); } catch { /* column may not exist yet */ }
 
         // Insert additional products into CustomerProducts table
         var allProducts = payload.Products.Any()
@@ -229,7 +238,8 @@ public class CustomersController : ControllerBase
         var sql = @"
             SELECT c.[CustomerID], c.[DrName], c.[Hospital], c.[Address],
                    a.[AreaName] AS Area, p.[ProductName] AS Product,
-                   c.[Class], c.[Status], c.[TotalVisits], c.[LastVisitDate], c.[CreatedAt]
+                   c.[Class], c.[Status], c.[TotalVisits], c.[LastVisitDate], c.[CreatedAt],
+                   ISNULL(c.[Category], 'Hospital') AS Category
             FROM [dbo].[Customers] c
             INNER JOIN [dbo].[Areas]    a ON a.[AreaID]   = c.[AreaID]
             LEFT  JOIN [dbo].[Products] p ON p.[ProductID]= c.[ProductID]
@@ -240,12 +250,13 @@ public class CustomersController : ControllerBase
         var list = new List<object>();
         await using var r = await cmd.ExecuteReaderAsync();
         var customers = new List<(int id, string drName, string hospital, string address, string area,
-            string product, string cls, string status, object totalVisits, object lastVisit, object createdAt)>();
+            string product, string cls, string status, string category, object totalVisits, object lastVisit, object createdAt)>();
         while (await r.ReadAsync())
             customers.Add((
                 (int)r["CustomerID"], r["DrName"].ToString()!, r["Hospital"].ToString()!,
                 r["Address"].ToString()!, r["Area"].ToString()!, r["Product"]?.ToString() ?? "",
                 r["Class"]?.ToString() ?? "", r["Status"].ToString()!,
+                r["Category"]?.ToString() ?? "Hospital",
                 r["TotalVisits"], r["LastVisitDate"], r["CreatedAt"]));
         await r.DisposeAsync();
 
@@ -273,6 +284,7 @@ public class CustomersController : ControllerBase
                 Product       = c.product,
                 Class         = c.cls,
                 Status        = c.status,
+                Category      = c.category,
                 TotalVisits   = c.totalVisits,
                 LastVisitDate = c.lastVisit,
                 CreatedAt     = c.createdAt,

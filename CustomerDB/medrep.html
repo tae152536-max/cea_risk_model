@@ -368,8 +368,21 @@ tr:hover td{background:#fafbfc;}
               <input class="form-input" id="f-drname" placeholder="e.g. Dr. Ahmed Mohamed">
             </div>
             <div class="form-group">
-              <label class="form-label">Hospital <span class="required">*</span></label>
-              <input class="form-input" id="f-hospital" placeholder="e.g. Cairo Medical Center">
+              <label class="form-label">Hospital / Drug Store Name <span class="required">*</span></label>
+              <input class="form-input" id="f-hospital" placeholder="e.g. Bangkok Hospital or Max Drugstore">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category <span class="required">*</span></label>
+            <div style="display:flex;gap:12px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                <input type="radio" name="f-category" id="f-cat-hospital" value="Hospital" checked style="accent-color:var(--primary);">
+                🏥 Hospital
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                <input type="radio" name="f-category" id="f-cat-otc" value="OTC" style="accent-color:var(--primary);">
+                💊 OTC (Drug Store)
+              </label>
             </div>
           </div>
           <div class="form-row">
@@ -715,7 +728,7 @@ function renderCustomerTable(data) {
   document.getElementById('myCustomerTable').innerHTML = `
     <div class="table-wrap"><table>
       <thead><tr>
-        <th>Dr Name</th><th>Hospital</th><th>Products & Class</th>
+        <th>Dr Name</th><th>Hospital / Drug Store</th><th>Category</th><th>Products & Class</th>
         <th>Status</th><th style="text-align:center">Visits</th><th>Last Visit</th><th>Actions</th>
       </tr></thead>
       <tbody>
@@ -723,6 +736,10 @@ function renderCustomerTable(data) {
           <tr>
             <td><strong>${c.drName}</strong></td>
             <td><span style="color:var(--muted)">${c.hospital}</span></td>
+            <td>${c.category === 'OTC'
+              ? '<span style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">💊 OTC</span>'
+              : '<span style="background:var(--blue-bg);color:var(--blue);border:1px solid #bfdbfe;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">🏥 Hospital</span>'
+            }</td>
             <td>${renderProductBadges(c)}</td>
             <td><span class="badge ${statusBadgeClass(c.status)}">${statusIcon(c.status)} ${c.status||'—'}</span></td>
             <td style="text-align:center">
@@ -851,10 +868,13 @@ async function submitNewCustomer() {
   const address = addressParts.join(', ');
 
   // Use first product for legacy field; send all products in new field
+  const category = document.querySelector('input[name="f-category"]:checked')?.value || 'Hospital';
+
   const payload = {
     drName,
     hospital,
     address,
+    category,
     area:        me.areaName,
     medRepEmail: me.email,
     product:     selectedProducts[0].name,
@@ -915,6 +935,7 @@ function clearForm() {
     if (cb)  cb.checked = false;
     if (sel) { sel.disabled = true; sel.style.opacity = '.4'; sel.value = 'C'; }
   });
+  document.getElementById('f-cat-hospital').checked = true;
   document.getElementById('submitMsg').innerHTML = '';
 }
 
