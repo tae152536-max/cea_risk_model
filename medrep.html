@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedRep Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary:#e84855; --primary-bg:#fff1f2; --primary-mid:#ffd6d9;
+  --green:#10b981;   --green-bg:#ecfdf5;
+  --blue:#3b82f6;    --blue-bg:#eff6ff;
+  --yellow:#f59e0b;  --yellow-bg:#fffbeb;
+  --red:#ef4444;     --red-bg:#fef2f2;
+  --bg:#f0f2f6; --panel:#fff; --border:#e2e8f0;
+  --text:#0e1117; --muted:#6b7280;
+  --shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+
+/* LOGIN SCREEN */
+.login-screen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#fff1f2 0%,#f0f2f6 100%);
+}
+.login-card{
+  background:var(--panel);border-radius:20px;padding:48px 40px;
+  width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.12);text-align:center;
+}
+.login-icon{font-size:52px;margin-bottom:16px;}
+.login-title{font-size:24px;font-weight:800;margin-bottom:6px;}
+.login-sub{color:var(--muted);margin-bottom:32px;font-size:14px;}
+.login-select{
+  width:100%;border:2px solid var(--border);border-radius:12px;
+  padding:14px 16px;font-size:15px;font-family:inherit;outline:none;
+  margin-bottom:16px;appearance:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 16px center;
+}
+.login-select:focus{border-color:var(--primary);}
+.login-btn{
+  width:100%;background:var(--primary);color:#fff;border:none;border-radius:12px;
+  padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:.15s;
+}
+.login-btn:hover{background:#d63f4b;}
+.login-btn:disabled{background:#cbd5e1;cursor:not-allowed;}
+
+/* HEADER */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:60px;background:var(--panel);
+  border-bottom:1px solid var(--border);border-top:4px solid var(--primary);
+  position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-icon{width:34px;height:34px;background:var(--primary);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;}
+.brand-name{font-size:15px;font-weight:800;}
+.user-info{display:flex;align-items:center;gap:10px;}
+.user-badge{background:var(--primary-bg);color:var(--primary);border:1px solid var(--primary-mid);
+  border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;}
+.logout-btn{background:none;border:1px solid var(--border);border-radius:8px;
+  padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--muted);}
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* TABS */
+.tabs{display:flex;gap:4px;padding:16px 24px 0;border-bottom:1px solid var(--border);background:var(--panel);}
+.tab{padding:10px 18px;cursor:pointer;border-bottom:3px solid transparent;
+  font-weight:500;color:var(--muted);transition:.2s;border-radius:6px 6px 0 0;}
+.tab:hover{color:var(--text);background:#f8fafc;}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600;}
+
+/* MAIN */
+main{padding:24px;max-width:1200px;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
+.stat-card{background:var(--panel);border-radius:12px;padding:18px 20px;
+  border:1px solid var(--border);box-shadow:var(--shadow);}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.stat-value{font-size:26px;font-weight:800;margin-top:4px;}
+.stat-card.visits .stat-value{color:var(--blue);}
+.stat-card.customers .stat-value{color:var(--green);}
+.stat-card.pending .stat-value{color:var(--yellow);}
+
+/* PANEL */
+.panel{background:var(--panel);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);}
+.panel-title{font-size:15px;font-weight:700;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{background:#f8fafc;padding:10px 14px;text-align:left;font-size:11px;font-weight:600;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#fafbfc;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;}
+.badge-approved{background:var(--green-bg);color:var(--green);}
+.badge-pending{background:var(--yellow-bg);color:var(--yellow);}
+.badge-rejected{background:var(--red-bg);color:var(--red);}
+.badge-delete{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;}
+.badge-a{background:#fdf4ff;color:#9333ea;}
+.badge-b{background:var(--blue-bg);color:var(--blue);}
+.badge-c{background:#f1f5f9;color:var(--muted);}
+
+/* VISIT COUNTER */
+.visit-counter{display:inline-flex;align-items:center;gap:8px;}
+.visit-num{font-size:16px;font-weight:800;color:var(--blue);min-width:24px;text-align:center;}
+.visit-btn{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;
+  font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.visit-btn.plus{background:var(--blue-bg);color:var(--blue);}
+.visit-btn.plus:hover{background:#bfdbfe;}
+.visit-btn.log{background:var(--green-bg);color:var(--green);font-size:14px;}
+.visit-btn.log:hover{background:#bbf7d0;}
+.visit-btn.checkin{background:#fef3c7;color:#d97706;font-size:14px;}
+.visit-btn.checkin:hover{background:#fde68a;}
+.visit-btn.checkin.checked-in{background:#d1fae5;color:#059669;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.15s;font-family:inherit;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:#d63f4b;}
+.btn-ghost{background:#f1f5f9;color:var(--text);}
+.btn-ghost:hover{background:#e2e8f0;}
+.btn-blue{background:var(--blue-bg);color:var(--blue);}
+.btn-blue:hover{background:#bfdbfe;}
+.btn-sm{padding:5px 10px;font-size:12px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);
+  display:none;align-items:center;justify-content:center;z-index:200;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--panel);border-radius:16px;width:500px;max-width:95vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;max-height:90vh;overflow-y:auto;}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--panel);}
+.modal-title{font-size:16px;font-weight:700;}
+.modal-close{cursor:pointer;font-size:20px;color:var(--muted);background:none;border:none;}
+.modal-body{padding:22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--panel);}
+
+/* FORM */
+.form-group{margin-bottom:16px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text);}
+.form-input,.form-select,.form-textarea{
+  width:100%;border:1px solid var(--border);border-radius:8px;
+  padding:9px 12px;font-size:14px;font-family:inherit;outline:none;background:#fff;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary);}
+.form-textarea{resize:vertical;min-height:80px;}
+.required{color:var(--red);}
+
+/* VISIT LOG */
+.visit-item{padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);margin-bottom:10px;}
+.visit-item-date{font-weight:700;font-size:13px;color:var(--text);}
+.visit-item-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+
+/* EMPTY */
+.empty{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-icon{font-size:44px;margin-bottom:10px;}
+.loading{display:flex;align-items:center;gap:10px;padding:40px;color:var(--muted);justify-content:center;}
+.spinner{width:20px;height:20px;border:2px solid var(--border);
+  border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;
+  border-radius:10px;padding:12px 20px;font-size:13px;font-weight:500;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:999;
+  transform:translateY(100px);opacity:0;transition:.3s;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-left:4px solid var(--green);}
+.toast.error{border-left:4px solid var(--red);}
+
+/* PAGE */
+.page{display:none;}.page.active{display:block;}
+#app{display:none;}
+@media(max-width:768px){
+  .visits-grid{grid-template-columns:1fr !important;}
+  .stats{grid-template-columns:1fr 1fr !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════ LOGIN SCREEN ══════ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-icon">💊</div>
+    <div class="login-title">MedRep Portal</div>
+    <div class="login-sub">Pilot Sales · Internal Use</div>
+    <div class="form-group" style="text-align:left">
+      <label class="form-label">Username</label>
+      <input class="form-input" id="loginUser" placeholder="sale" value="sale" readonly
+        style="background:#f8fafc;color:var(--muted);">
+    </div>
+    <div class="form-group" style="text-align:left;margin-bottom:8px">
+      <label class="form-label">Password (your area code)</label>
+      <input class="form-input" id="loginPass" type="password" placeholder="Enter your area code…"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="loginError" style="color:var(--red);font-size:13px;margin-bottom:12px;min-height:18px;"></div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Enter Portal →</button>
+    <div style="margin-top:20px;font-size:12px;color:var(--muted);">
+      Area codes are provided by your manager.
+    </div>
+  </div>
+</div>
+
+<!-- ══════ APP ══════ -->
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">💊</div>
+      <div>
+        <div class="brand-name">MedRep Portal</div>
+      </div>
+    </div>
+    <div class="user-info">
+      <span class="user-badge">👤 <span id="headerName"></span></span>
+      <span style="font-size:12px;color:var(--muted);">📍 <span id="headerArea"></span></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="showPage('mycustomers',this)">👥 My Customers</div>
+    <div class="tab" onclick="showPage('addcustomer',this)">➕ Add New Customer</div>
+    <div class="tab" onclick="showPage('visits',this)">📋 Visits</div>
+  </div>
+
+  <main>
+
+    <!-- ── PAGE: MY CUSTOMERS ── -->
+    <div id="page-mycustomers" class="page active">
+
+      <div class="stats">
+        <div class="stat-card customers">
+          <div class="stat-label">My Customers</div>
+          <div class="stat-value" id="s-total">—</div>
+        </div>
+        <div class="stat-card visits">
+          <div class="stat-label">Total Visits</div>
+          <div class="stat-value" id="s-visits">—</div>
+        </div>
+        <div class="stat-card pending">
+          <div class="stat-label">Pending Approval</div>
+          <div class="stat-value" id="s-pending">—</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">My Customer List</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="searchBox" type="text" placeholder="🔍 Search…"
+              style="border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;outline:none;width:180px;"
+              oninput="filterCustomers()">
+            <button class="btn btn-ghost btn-sm" onclick="loadMyCustomers()">🔄 Refresh</button>
+          </div>
+        </div>
+        <div id="myCustomerTable">
+          <div class="loading"><div class="spinner"></div> Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: VISITS ── -->
+    <div id="page-visits" class="page">
+      <div class="visits-grid" style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px;align-items:start;">
+
+        <!-- Record New Visit form -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">📋 Record New Visit</span>
+          </div>
+          <div style="padding:20px;">
+            <div class="form-group">
+              <label class="form-label">Customer <span class="required">*</span></label>
+              <select class="form-select" id="vp-customer">
+                <option value="">— Select Customer —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Visit Date</label>
+              <input class="form-input" type="date" id="vp-date">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Activity <span class="required">*</span></label>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-act-propose" value="Propose Sale" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💼 Propose Sale
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-act-presentation" value="Product Presentation" style="width:16px;height:16px;accent-color:var(--primary);">
+                  📊 Product Presentation
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-act-market" value="Market Visit" style="width:16px;height:16px;accent-color:var(--primary);">
+                  🗺️ Market Visit
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-act-research" value="Market Research" style="width:16px;height:16px;accent-color:var(--primary);">
+                  🔍 Market Research
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Products Discussed <span style="font-size:11px;color:var(--muted)">(optional)</span></label>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-prod-xaralto" value="Xaralto" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Xaralto
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-prod-vissane" value="Vissane" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Vissane
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" id="vp-prod-arcoxia" value="Arcoxia" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Arcoxia
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea class="form-textarea" id="vp-notes" placeholder="Additional notes about the visit…"></textarea>
+            </div>
+            <div id="vp-msg" style="font-size:13px;min-height:18px;margin-bottom:10px;"></div>
+            <button class="btn btn-primary" style="width:100%" onclick="saveVisitFromPage()">✓ Save Visit</button>
+          </div>
+        </div>
+
+        <!-- Visit History table -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">📅 Visit History</span>
+            <button class="btn btn-ghost btn-sm" onclick="loadVisits()">🔄 Refresh</button>
+          </div>
+          <div id="visitsTable">
+            <div class="loading"><div class="spinner"></div> Loading…</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── PAGE: ADD CUSTOMER ── -->
+    <div id="page-addcustomer" class="page">
+      <div class="panel" style="max-width:680px;">
+        <div class="panel-header">
+          <span class="panel-title">➕ Add New Customer</span>
+        </div>
+        <div style="padding:24px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Dr Name <span class="required">*</span></label>
+              <input class="form-input" id="f-drname" placeholder="e.g. Dr. Ahmed Mohamed">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hospital / Drug Store Name <span class="required">*</span></label>
+              <input class="form-input" id="f-hospital" placeholder="e.g. Bangkok Hospital or Max Drugstore">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category <span class="required">*</span></label>
+            <div style="display:flex;gap:12px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                <input type="radio" name="f-category" id="f-cat-hospital" value="Hospital" checked
+                  onchange="onCategoryChange()" style="accent-color:var(--primary);">
+                Hospital
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                <input type="radio" name="f-category" id="f-cat-otc" value="OTC"
+                  onchange="onCategoryChange()" style="accent-color:var(--primary);">
+                OTC (Drug Store)
+              </label>
+            </div>
+          </div>
+
+          <!-- Specialty — shown for Hospital only -->
+          <div class="form-group" id="f-specialty-group">
+            <label class="form-label">Doctor Specialty <span class="required">*</span></label>
+            <input class="form-input" id="f-specialty" list="specialty-list"
+              placeholder="Type to search specialty…" autocomplete="off">
+            <datalist id="specialty-list">
+              <option>Cardiology</option>
+              <option>Orthopedics</option>
+              <option>Neurology</option>
+              <option>Oncology</option>
+              <option>Gastroenterology</option>
+              <option>Pulmonology</option>
+              <option>Nephrology</option>
+              <option>Endocrinology</option>
+              <option>Rheumatology</option>
+              <option>Dermatology</option>
+              <option>Ophthalmology</option>
+              <option>ENT / Otolaryngology</option>
+              <option>Urology</option>
+              <option>Gynecology</option>
+              <option>Obstetrics</option>
+              <option>Pediatrics</option>
+              <option>Psychiatry</option>
+              <option>Anesthesiology</option>
+              <option>Radiology</option>
+              <option>Emergency Medicine</option>
+              <option>Internal Medicine</option>
+              <option>Surgery</option>
+              <option>Plastic Surgery</option>
+              <option>Hematology</option>
+              <option>Infectious Disease</option>
+              <option>General Practice / Family Medicine</option>
+              <option>Sports Medicine</option>
+              <option>Geriatrics</option>
+              <option>Allergy and Immunology</option>
+              <option>Palliative Care</option>
+              <option>Hospital Pharmacist</option>
+              <option>Nurse</option>
+            </datalist>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Province (จังหวัด)</label>
+              <select class="form-select" id="f-province" onchange="onProvinceChange()">
+                <option value="">— Select Province —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">District / Subdistrict (อำเภอ/แขวง)</label>
+              <select class="form-select" id="f-subdistrict" onchange="onSubdistrictChange()">
+                <option value="">— Select Province first —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Address (Street / Building)</label>
+            <input class="form-input" id="f-address" placeholder="Street, Building No. (optional)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Products & Class <span class="required">*</span> <span style="font-size:11px;color:var(--muted)">(select one or more)</span></label>
+            <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:6px 14px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">
+                <span>Product</span><span>Class</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                  <input type="checkbox" id="fp-xaralto" onchange="toggleProductClass('xaralto')" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Xaralto
+                </label>
+                <select class="form-select" id="fc-xaralto" disabled style="width:110px;opacity:.4;">
+                  <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+                </select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                  <input type="checkbox" id="fp-vissane" onchange="toggleProductClass('vissane')" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Vissane
+                </label>
+                <select class="form-select" id="fc-vissane" disabled style="width:110px;opacity:.4;">
+                  <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+                </select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;gap:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+                  <input type="checkbox" id="fp-arcoxia" onchange="toggleProductClass('arcoxia')" style="width:16px;height:16px;accent-color:var(--primary);">
+                  💊 Arcoxia
+                </label>
+                <select class="form-select" id="fc-arcoxia" disabled style="width:110px;opacity:.4;">
+                  <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Area</label>
+            <input class="form-input" id="f-area" readonly style="background:#f8fafc;color:var(--muted);">
+          </div>
+          <div style="display:flex;gap:10px;margin-top:8px;">
+            <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
+            <button class="btn btn-primary" onclick="submitNewCustomer()">➕ Submit Customer</button>
+          </div>
+          <div id="submitMsg" style="margin-top:14px;font-size:13px;"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════ MODAL: EDIT CUSTOMER ══════ -->
+<div class="modal-overlay" id="editCustomerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Customer</span>
+      <button class="modal-close" onclick="closeModal('editCustomerModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--yellow-bg);border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400e;">
+        ✏️ You can edit or delete <strong>Pending</strong> customers. Once approved by admin, contact your admin for changes.
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Dr Name</label>
+          <input class="form-input" id="ec-drname" placeholder="e.g. Dr. Smith">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hospital</label>
+          <input class="form-input" id="ec-hospital" placeholder="Hospital name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input class="form-input" id="ec-address" placeholder="Street, District, Province">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Products & Class</label>
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:6px 14px;background:#f8fafc;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">
+            <span>Product</span><span>Class</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+              <input type="checkbox" id="ep-xaralto" onchange="toggleProductClass('ep-xaralto','ec-xaralto')" style="width:16px;height:16px;accent-color:var(--primary);">
+              💊 Xaralto
+            </label>
+            <select class="form-select" id="ec-xaralto" disabled style="width:110px;opacity:.4;">
+              <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:12px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+              <input type="checkbox" id="ep-vissane" onchange="toggleProductClass('ep-vissane','ec-vissane')" style="width:16px;height:16px;accent-color:var(--primary);">
+              💊 Vissane
+            </label>
+            <select class="form-select" id="ec-vissane" disabled style="width:110px;opacity:.4;">
+              <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 14px;gap:12px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;">
+              <input type="checkbox" id="ep-arcoxia" onchange="toggleProductClass('ep-arcoxia','ec-arcoxia')" style="width:16px;height:16px;accent-color:var(--primary);">
+              💊 Arcoxia
+            </label>
+            <select class="form-select" id="ec-arcoxia" disabled style="width:110px;opacity:.4;">
+              <option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="ec-msg" style="font-size:13px;min-height:18px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editCustomerModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditCustomer()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: CHECK IN ══════ -->
+<div class="modal-overlay" id="checkInModal">
+  <div class="modal" style="width:360px;">
+    <div class="modal-header">
+      <span class="modal-title">📍 Check In</span>
+      <button class="modal-close" onclick="closeModal('checkInModal')">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;">
+      <div style="font-size:40px;margin-bottom:8px;">📍</div>
+      <div style="font-weight:700;font-size:15px;" id="ci-drName"></div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:16px;" id="ci-hospital"></div>
+      <div id="ci-status" style="font-size:13px;color:var(--muted);margin-bottom:16px;">Getting your location…</div>
+      <div id="ci-info" style="background:var(--blue-bg);border-radius:10px;padding:12px 16px;font-size:12px;text-align:left;display:none;">
+        <div>🕐 <strong>Time:</strong> <span id="ci-time"></span></div>
+        <div style="margin-top:6px;">📌 <strong>Location:</strong> <span id="ci-location"></span></div>
+        <div style="margin-top:6px;"><a id="ci-maplink" href="#" target="_blank" style="color:var(--blue);font-size:12px;">🗺️ View on Google Maps</a></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('checkInModal')">Close</button>
+      <button class="btn btn-primary" id="ci-saveBtn" onclick="saveCheckIn()" style="display:none;">✓ Save Check In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: RECORD VISIT ══════ -->
+<div class="modal-overlay" id="visitModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📋 Record Visit</span>
+      <button class="modal-close" onclick="closeModal('visitModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--blue-bg);border-radius:10px;padding:14px 16px;margin-bottom:18px;">
+        <div style="font-weight:700;" id="visitDrName"></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;" id="visitHospital"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Visit Date</label>
+        <input class="form-input" type="date" id="v-date">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Activity <span class="required">*</span></label>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="act-propose" value="Propose Sale" style="width:16px;height:16px;accent-color:var(--primary);">
+            💼 Propose Sale
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="act-presentation" value="Product Presentation" style="width:16px;height:16px;accent-color:var(--primary);">
+            📊 Product Presentation
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="act-market" value="Market Visit" style="width:16px;height:16px;accent-color:var(--primary);">
+            🗺️ Market Visit
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="act-research" value="Market Research" style="width:16px;height:16px;accent-color:var(--primary);">
+            🔍 Market Research
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Products Discussed <span style="font-size:11px;color:var(--muted)">(select one or more)</span></label>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="prod-xaralto" value="Xaralto" style="width:16px;height:16px;accent-color:var(--primary);">
+            💊 Xaralto
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="prod-vissane" value="Vissane" style="width:16px;height:16px;accent-color:var(--primary);">
+            💊 Vissane
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" id="prod-arcoxia" value="Arcoxia" style="width:16px;height:16px;accent-color:var(--primary);">
+            💊 Arcoxia
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="v-notes" placeholder="Additional notes about the visit…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('visitModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveVisit()">✓ Save Visit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL: VISIT HISTORY ══════ -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="historyTitle">Visit History</span>
+      <button class="modal-close" onclick="closeModal('historyModal')">✕</button>
+    </div>
+    <div class="modal-body" id="historyBody">
+      <div class="loading"><div class="spinner"></div> Loading…</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = `${window.location.origin}/api/customers`;
+let me = null;           // current MedRep object
+let myCustomers = [];    // cached customer list
+let currentVisitID = null;
+
+// ── LOGIN ──────────────────────────────────────────
+window.onload = () => { initThailandGeo(); };
+
+async function doLogin() {
+  const pass = document.getElementById('loginPass').value.trim();
+  const err  = document.getElementById('loginError');
+  const btn  = document.getElementById('loginBtn');
+  if (!pass) { err.textContent = 'Please enter your area code.'; return; }
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+  err.textContent = '';
+  try {
+    const res = await apiFetch(`${API}/login`, 'POST', { username: 'sale', password: pass });
+    if (res.role !== 'medrep') { err.textContent = 'Access denied.'; btn.textContent = 'Enter Portal →'; btn.disabled = false; return; }
+    me = res;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('headerName').textContent = me.name;
+    document.getElementById('headerArea').textContent = me.areaName;
+    document.getElementById('f-area').value = me.areaName;
+    loadMyCustomers();
+  } catch(e) {
+    if (e.message && e.message.includes('fetch')) {
+      err.textContent = '❌ Cannot reach server. Check your connection.';
+    } else if (e.message && e.message.includes('401')) {
+      err.textContent = '❌ Invalid area code. Please try again.';
+    } else {
+      err.textContent = '❌ ' + (e.message || 'Login failed. Please try again.');
+    }
+    btn.textContent = 'Enter Portal →'; btn.disabled = false;
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginPass').focus();
+  }
+}
+
+function logout() {
+  me = null; myCustomers = [];
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').textContent = '';
+}
+
+// ── NAVIGATION ──────────────────────────────────────
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'visits') loadVisits();
+}
+
+// ── LOAD MY CUSTOMERS ────────────────────────────────
+async function loadMyCustomers() {
+  document.getElementById('myCustomerTable').innerHTML =
+    '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try {
+    myCustomers = await apiFetch(`${API}/medrep/${me.medRepID}/list`);
+    updateStats();
+    renderCustomerTable(myCustomers);
+  } catch(e) {
+    document.getElementById('myCustomerTable').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+function updateStats() {
+  const total   = myCustomers.length;
+  const visits  = myCustomers.reduce((s, c) => s + (c.totalVisits || 0), 0);
+  const pending = myCustomers.filter(c => c.status === 'Pending').length;
+  document.getElementById('s-total').textContent   = total;
+  document.getElementById('s-visits').textContent  = visits;
+  document.getElementById('s-pending').textContent = pending;
+}
+
+function filterCustomers() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const filtered = myCustomers.filter(c =>
+    c.drName.toLowerCase().includes(q) || c.hospital.toLowerCase().includes(q));
+  renderCustomerTable(filtered);
+}
+
+function renderCustomerTable(data) {
+  if (!data.length) {
+    document.getElementById('myCustomerTable').innerHTML =
+      '<div class="empty"><div class="empty-icon">👥</div><p>No customers found.<br><small>Add your first customer →</small></p></div>';
+    return;
+  }
+  document.getElementById('myCustomerTable').innerHTML = `
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Dr Name</th><th>Hospital / Drug Store</th><th>Category</th><th>Products & Class</th>
+        <th>Status</th><th style="text-align:center">Visits</th><th>Last Visit</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        ${data.map(c => `
+          <tr>
+            <td>
+              <strong>${c.drName}</strong>
+              ${c.specialty ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">${c.specialty}</div>` : ''}
+            </td>
+            <td><span style="color:var(--muted)">${c.hospital}</span></td>
+            <td>${c.category === 'OTC'
+              ? '<span style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">OTC</span>'
+              : '<span style="background:var(--blue-bg);color:var(--blue);border:1px solid #bfdbfe;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600;">Hospital</span>'
+            }</td>
+            <td>${renderProductBadges(c)}</td>
+            <td><span class="badge ${statusBadgeClass(c.status)}">${statusIcon(c.status)} ${c.status||'—'}</span></td>
+            <td style="text-align:center">
+              <div class="visit-counter">
+                <span class="visit-num" id="vc-${c.customerID}">${c.totalVisits||0}</span>
+                <button class="visit-btn checkin" id="ci-${c.customerID}" title="Check In"
+                  onclick="checkIn(${c.customerID},'${esc(c.drName)}','${esc(c.hospital)}')">📍</button>
+                <button class="visit-btn log" title="Log visit"
+                  onclick="openVisitModal(${c.customerID},'${esc(c.drName)}','${esc(c.hospital)}')">📋</button>
+              </div>
+            </td>
+            <td style="font-size:12px;color:var(--muted)">${fmtDate(c.lastVisitDate)}</td>
+            <td>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                <button class="btn btn-blue btn-sm" onclick="openHistory(${c.customerID},'${esc(c.drName)}')">
+                  📅 History
+                </button>
+                ${canEdit(c) ? `
+                <button class="btn btn-sm" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;"
+                  onclick="openEditCustomer(${c.customerID})" title="Edit">✏️ Edit</button>` : ''}
+                ${c.status === 'Delete Requested' ? `
+                <span style="font-size:12px;color:var(--red);font-weight:600;">⏳ Delete Pending</span>` :
+                canDelete(c) ? `
+                <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red);border:1px solid #fecaca;"
+                  onclick="requestDelete(${c.customerID},'${esc(c.drName)}')" title="Request deletion (admin must approve)">🗑️ Delete</button>` : ''}
+              </div>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+// ── DETAILED VISIT MODAL ──────────────────────────────
+function openVisitModal(id, drName, hospital) {
+  currentVisitID = id;
+  document.getElementById('visitDrName').textContent  = drName;
+  document.getElementById('visitHospital').textContent = hospital;
+  document.getElementById('v-date').value = new Date().toISOString().slice(0,10);
+  ['act-propose','act-presentation','act-market','act-research'].forEach(id => document.getElementById(id).checked = false);
+  ['prod-xaralto','prod-vissane','prod-arcoxia'].forEach(id => document.getElementById(id).checked = false);
+  document.getElementById('v-notes').value = '';
+  openModal('visitModal');
+}
+
+async function saveVisit() {
+  // Collect activities
+  const activities = ['act-propose','act-presentation','act-market','act-research']
+    .filter(id => document.getElementById(id).checked)
+    .map(id => document.getElementById(id).value);
+  // Collect products
+  const products = ['prod-xaralto','prod-vissane','prod-arcoxia']
+    .filter(id => document.getElementById(id).checked)
+    .map(id => document.getElementById(id).value);
+
+  const outcome = activities.length ? activities.join(', ') : null;
+  const notesBase = document.getElementById('v-notes').value || '';
+  const productsNote = products.length ? `Products: ${products.join(', ')}` : '';
+  const notes = [productsNote, notesBase].filter(Boolean).join(' | ') || null;
+
+  const body = {
+    medRepID:  me.medRepID,
+    visitDate: document.getElementById('v-date').value,
+    notes,
+    outcome
+  };
+  try {
+    const res = await apiFetch(`${API}/${currentVisitID}/visit`, 'POST', body);
+    closeModal('visitModal');
+    const el = document.getElementById(`vc-${currentVisitID}`);
+    if (el) el.textContent = res.totalVisits;
+    const c = myCustomers.find(x => x.customerID === currentVisitID);
+    if (c) { c.totalVisits = res.totalVisits; c.lastVisitDate = body.visitDate; }
+    updateStats();
+    showToast('✅ Visit saved successfully!', 'success');
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── VISIT HISTORY ─────────────────────────────────────
+async function openHistory(id, drName) {
+  document.getElementById('historyTitle').textContent = `📅 ${drName} — Visits`;
+  document.getElementById('historyBody').innerHTML =
+    '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  openModal('historyModal');
+  try {
+    const visits = await apiFetch(`${API}/${id}/visits`);
+    if (!visits.length) {
+      document.getElementById('historyBody').innerHTML =
+        '<div class="empty"><div class="empty-icon">📅</div><p>No visits recorded yet</p></div>';
+      return;
+    }
+    document.getElementById('historyBody').innerHTML = visits.map(v => `
+      <div class="visit-item">
+        <div class="visit-item-date">📅 ${fmtDate(v.visitDate)}</div>
+        <div class="visit-item-meta">
+          ${v.product ? `💊 ${v.product} &nbsp;·&nbsp;` : ''}
+          ${v.outcome ? `🎯 ${v.outcome} &nbsp;·&nbsp;` : ''}
+          👤 ${v.medRep}
+        </div>
+        ${v.notes ? `<div style="margin-top:6px;font-size:13px;color:var(--text)">${v.notes}</div>` : ''}
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('historyBody').innerHTML = `<p style="color:var(--red)">${e.message}</p>`;
+  }
+}
+
+// ── ADD NEW CUSTOMER ──────────────────────────────────
+async function submitNewCustomer() {
+  const drName   = document.getElementById('f-drname').value.trim();
+  const hospital = document.getElementById('f-hospital').value.trim();
+  const msg = document.getElementById('submitMsg');
+
+  const selectedProducts = getSelectedProducts('f');
+  if (!drName || !hospital) {
+    msg.innerHTML = '<span style="color:var(--red)">⚠️ Dr Name and Hospital are required.</span>';
+    return;
+  }
+  if (!selectedProducts.length) {
+    msg.innerHTML = '<span style="color:var(--red)">⚠️ Please select at least one product.</span>';
+    return;
+  }
+
+  const province    = document.getElementById('f-province').value;
+  const subdistrict = document.getElementById('f-subdistrict').value;
+  const street      = document.getElementById('f-address').value.trim();
+  const addressParts = [street, subdistrict, province].filter(Boolean);
+  const address = addressParts.join(', ');
+
+  // Use first product for legacy field; send all products in new field
+  const category  = document.querySelector('input[name="f-category"]:checked')?.value || 'Hospital';
+  const specialty = category === 'Hospital' ? (document.getElementById('f-specialty').value.trim() || '') : '';
+
+  if (category === 'Hospital' && !specialty) {
+    msg.innerHTML = '<span style="color:var(--red)">⚠️ Please enter the doctor\'s specialty.</span>';
+    return;
+  }
+
+  const payload = {
+    drName,
+    hospital,
+    address,
+    category,
+    specialty,
+    area:        me.areaName,
+    areaID:      me.areaID,
+    medRepEmail: me.email,
+    medRepID:    me.medRepID,
+    product:     selectedProducts[0].name,
+    class:       selectedProducts[0].class,
+    products:    selectedProducts
+  };
+
+  msg.innerHTML = '<span style="color:var(--muted)">⏳ Submitting…</span>';
+  try {
+    const res = await apiFetch(`${API}/from-google-form`, 'POST', payload);
+    if (res.customerID === -1) {
+      msg.innerHTML = `<span style="color:var(--yellow)">⚠️ Duplicate detected — this doctor at this hospital already exists (ID: ${res.existingCustomerID}).</span>`;
+    } else {
+      msg.innerHTML = '<span style="color:var(--green)">✅ Customer submitted! Waiting for admin approval.</span>';
+      clearForm();
+      setTimeout(() => loadMyCustomers(), 800);
+    }
+  } catch(e) {
+    msg.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span>`;
+  }
+}
+
+// Enable/disable class dropdown when product checkbox toggled
+function toggleProductClass(product, classId) {
+  let cbId, selId;
+  if (classId === undefined) {
+    cbId  = 'fp-' + product;
+    selId = 'fc-' + product;
+  } else {
+    cbId  = product;
+    selId = classId;
+  }
+  const checked = document.getElementById(cbId).checked;
+  const sel     = document.getElementById(selId);
+  sel.disabled      = !checked;
+  sel.style.opacity = checked ? '1' : '.4';
+}
+
+// Collect checked products+class from a form (prefix 'f' = add form, 'e' = edit modal)
+function getSelectedProducts(prefix) {
+  const cbPfx  = prefix + 'p';
+  const selPfx = prefix + 'c';
+  return ['xaralto','vissane','arcoxia']
+    .filter(p => document.getElementById(`${cbPfx}-${p}`)?.checked)
+    .map(p => ({
+      name:  p.charAt(0).toUpperCase() + p.slice(1),
+      class: document.getElementById(`${selPfx}-${p}`)?.value || 'C'
+    }));
+}
+
+function clearForm() {
+  ['f-drname','f-hospital','f-address'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-province').value = '';
+  document.getElementById('f-subdistrict').innerHTML = '<option value="">— Select Province first —</option>';
+  ['xaralto','vissane','arcoxia'].forEach(p => {
+    const cb  = document.getElementById('fp-' + p);
+    const sel = document.getElementById('fc-' + p);
+    if (cb)  cb.checked = false;
+    if (sel) { sel.disabled = true; sel.style.opacity = '.4'; sel.value = 'C'; }
+  });
+  document.getElementById('f-cat-hospital').checked = true;
+  document.getElementById('f-specialty').value = '';
+  document.getElementById('f-specialty-group').style.display = 'block';
+  document.getElementById('submitMsg').innerHTML = '';
+}
+
+// ── VISITS TAB ────────────────────────────────────────
+async function loadVisits() {
+  // Populate customer dropdown — load fresh if cache is empty
+  if (!myCustomers.length) {
+    try { myCustomers = await apiFetch(`${API}/medrep/${me.medRepID}/list`); updateStats(); } catch(_) {}
+  }
+  const sel = document.getElementById('vp-customer');
+  if (sel) {
+    const eligible = myCustomers.filter(c => c.status !== 'Rejected');
+    sel.innerHTML = '<option value="">— Select Customer —</option>' +
+      eligible.map(c => `<option value="${c.customerID}">${c.drName} — ${c.hospital}</option>`).join('');
+    if (!eligible.length) {
+      sel.innerHTML = '<option value="">No customers yet</option>';
+    }
+  }
+  // Set today's date
+  const vpDate = document.getElementById('vp-date');
+  if (vpDate && !vpDate.value) vpDate.value = new Date().toISOString().slice(0,10);
+
+  const container = document.getElementById('visitsTable');
+  if (!container) return;
+  container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try {
+    const visits = await apiFetch(`${API}/medrep/${me.medRepID}/visits`);
+    if (!visits.length) {
+      container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>No visits recorded yet.<br><small>Use the form on the left to record your first visit.</small></p></div>';
+      return;
+    }
+    container.innerHTML = `
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>Date</th><th>Dr Name</th><th>Hospital</th>
+          <th>Activity</th><th>Notes</th>
+        </tr></thead>
+        <tbody>
+          ${visits.map(v => `
+            <tr>
+              <td style="white-space:nowrap;font-weight:600;font-size:13px">${fmtDate(v.visitDate)}</td>
+              <td><strong>${v.drName}</strong></td>
+              <td style="color:var(--muted);font-size:13px">${v.hospital}</td>
+              <td>${v.outcome ? `<span style="font-size:12px;background:var(--blue-bg);color:var(--blue);padding:2px 8px;border-radius:12px">${v.outcome}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+              <td style="font-size:12px;color:var(--muted);max-width:220px">${v.notes || '—'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table></div>`;
+  } catch(e) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+  }
+}
+
+async function saveVisitFromPage() {
+  const msg = document.getElementById('vp-msg');
+  const customerID = document.getElementById('vp-customer').value;
+  if (!customerID) { msg.innerHTML = '<span style="color:var(--red)">⚠️ Please select a customer.</span>'; return; }
+
+  const activities = ['vp-act-propose','vp-act-presentation','vp-act-market','vp-act-research']
+    .filter(id => document.getElementById(id).checked)
+    .map(id => document.getElementById(id).value);
+  if (!activities.length) { msg.innerHTML = '<span style="color:var(--red)">⚠️ Please select at least one activity.</span>'; return; }
+
+  const products = ['vp-prod-xaralto','vp-prod-vissane','vp-prod-arcoxia']
+    .filter(id => document.getElementById(id).checked)
+    .map(id => document.getElementById(id).value);
+
+  const outcome = activities.join(', ');
+  const notesBase = document.getElementById('vp-notes').value.trim();
+  const productsNote = products.length ? `Products: ${products.join(', ')}` : '';
+  const notes = [productsNote, notesBase].filter(Boolean).join(' | ') || null;
+
+  msg.innerHTML = '<span style="color:var(--muted)">⏳ Saving…</span>';
+  try {
+    const res = await apiFetch(`${API}/${customerID}/visit`, 'POST', {
+      medRepID:  me.medRepID,
+      visitDate: document.getElementById('vp-date').value,
+      notes,
+      outcome
+    });
+    // Update visit counter in My Customers cache
+    const c = myCustomers.find(x => x.customerID === parseInt(customerID));
+    if (c) { c.totalVisits = res.totalVisits; }
+    updateStats();
+    // Reset form
+    ['vp-act-propose','vp-act-presentation','vp-act-market','vp-act-research',
+     'vp-prod-xaralto','vp-prod-vissane','vp-prod-arcoxia'].forEach(id => document.getElementById(id).checked = false);
+    document.getElementById('vp-notes').value = '';
+    document.getElementById('vp-customer').value = '';
+    msg.innerHTML = '<span style="color:var(--green)">✅ Visit saved!</span>';
+    setTimeout(() => { msg.innerHTML = ''; }, 2500);
+    // Refresh history table
+    loadVisits();
+    showToast('✅ Visit recorded!', 'success');
+  } catch(e) {
+    msg.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span>`;
+  }
+}
+
+// ── EDIT / DELETE CUSTOMER (within 3 days) ─────────────
+function canEdit(c) {
+  // Allow edit/delete only while still Pending (no time limit)
+  // Approved and Rejected are locked — contact admin
+  return c.status === 'Pending';
+}
+
+function canDelete(c) {
+  // Can request deletion for Pending or Approved customers
+  // (not if already requested, or Rejected)
+  return c.status === 'Pending' || c.status === 'Approved';
+}
+
+let editingCustomerID = null;
+
+function openEditCustomer(id) {
+  const c = myCustomers.find(x => x.customerID === id);
+  if (!c) return;
+  editingCustomerID = id;
+  document.getElementById('ec-drname').value  = c.drName   || '';
+  document.getElementById('ec-hospital').value = c.hospital || '';
+  document.getElementById('ec-address').value  = c.address  || '';
+  document.getElementById('ec-msg').innerHTML  = '';
+  // Reset all product checkboxes
+  ['xaralto','vissane','arcoxia'].forEach(p => {
+    const cb  = document.getElementById('ep-' + p);
+    const sel = document.getElementById('ec-' + p);
+    if (cb)  cb.checked = false;
+    if (sel) { sel.disabled = true; sel.style.opacity = '.4'; sel.value = 'C'; }
+  });
+  // Pre-tick existing products from customerProducts or legacy product field
+  const existingProducts = c.customerProducts || (c.product ? [{ name: c.product, class: c.class || 'C' }] : []);
+  existingProducts.forEach(p => {
+    const key = p.name.toLowerCase();
+    const cb  = document.getElementById('ep-' + key);
+    const sel = document.getElementById('ec-' + key);
+    if (cb)  { cb.checked = true; }
+    if (sel) { sel.disabled = false; sel.style.opacity = '1'; sel.value = p.class || 'C'; }
+  });
+  openModal('editCustomerModal');
+}
+
+async function saveEditCustomer() {
+  const msg = document.getElementById('ec-msg');
+  const selectedProducts = getSelectedProducts('e');
+  if (!selectedProducts.length) {
+    msg.innerHTML = '<span style="color:var(--red)">⚠️ Please select at least one product.</span>';
+    return;
+  }
+  msg.innerHTML = '<span style="color:var(--muted)">⏳ Saving…</span>';
+  try {
+    await apiFetch(`${API}/${editingCustomerID}/edit`, 'PATCH', {
+      medRepID: me.medRepID,
+      drName:   document.getElementById('ec-drname').value.trim(),
+      hospital: document.getElementById('ec-hospital').value.trim(),
+      address:  document.getElementById('ec-address').value.trim(),
+      product:  selectedProducts[0].name,
+      class:    selectedProducts[0].class,
+      products: selectedProducts
+    });
+    closeModal('editCustomerModal');
+    showToast('✅ Customer updated!', 'success');
+    loadMyCustomers();
+  } catch(e) {
+    msg.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span>`;
+  }
+}
+
+async function requestDelete(id, drName) {
+  if (!confirm(`Request deletion of "${drName}"?\n\nYour admin will review and confirm the deletion.`)) return;
+  try {
+    await apiFetch(`${API}/${id}/request-delete?medRepId=${me.medRepID}`, 'POST');
+    showToast(`🗑️ Deletion request sent for ${drName}. Awaiting admin approval.`, 'success');
+    loadMyCustomers();
+  } catch(e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+// ── THAILAND GEO ──────────────────────────────────────
+const THAILAND_GEO = {
+  "กรุงเทพมหานคร":["พระนคร","ดุสิต","หนองจอก","บางรัก","บางเขน","ลาดกระบัง","ยานนาวา","สัมพันธวงศ์","พระโขนง","มีนบุรี","ลาดพร้าว","วังทองหลาง","คลองสาน","ตลิ่งชัน","บางกอกน้อย","บึงกุ่ม","สาทร","บางซื่อ","จตุจักร","บางกอกใหญ่","ห้วยขวาง","คลองสาน","ดอนเมือง","ราษฎร์บูรณะ","หลักสี่","ลาดกระบัง","จอมทอง","บางพลัด","บางแค","ภาษีเจริญ","หนองแขม","ราษฎร์บูรณะ","หลักสี่","สวนหลวง","คันนายาว","สาธร","บางนา","ทวีวัฒนา","ทุ่งครุ","บางบอน","มีนบุรี","คลองสาน","สาทร","บึงกุ่ม","วังทองหลาง","ประเวศ","พระโขนง","สาธร","บางนา","ลาดกระบัง"],
+  "กระบี่":["เมืองกระบี่","เขาพนม","เกาะลันตา","คลองท่อม","อ่าวลึก","ปลายพระยา","ลำทับ","เหนือคลอง"],
+  "กาญจนบุรี":["เมืองกาญจนบุรี","ไทรโยค","บ่อพลอย","ศรีสวัสดิ์","ท่ามะกา","ท่าม่วง","ทองผาภูมิ","สังขละบุรี","พนมทวน","เลาขวัญ","ด่านมะขามเตี้ย","หนองปรือ","ห้วยกระเจา"],
+  "กาฬสินธุ์":["เมืองกาฬสินธุ์","นามน","กมลาไสย","ร่องคำ","กุฉินารายณ์","เขาวง","ยางตลาด","ห้วยเม็ก","สหัสขันธ์","คำม่วง","ท่าคันโท","หนองกุงศรี","สมเด็จ","ห้วยผึ้ง","สามชัย","นาคู","ดอนจาน","ฆ้องชัย"],
+  "กำแพงเพชร":["เมืองกำแพงเพชร","ไทรงาม","คลองลาน","ขาณุวรลักษบุรี","คลองขลุง","พรานกระต่าย","ลานกระบือ","ทรายทองวัฒนา","ปางศิลาทอง","บึงสามัคคี","โกสัมพีนคร"],
+  "ขอนแก่น":["เมืองขอนแก่น","บ้านฝาง","พระยืน","หนองเรือ","ชุมแพ","สีสุก","น้ำพอง","อุบลรัตน์","กระนวน","บ้านไผ่","เปือยน้อย","พล","แวงใหญ่","แวงน้อย","หนองสองห้อง","ภูเวียง","มัญจาคีรี","ชนบท","เขาสวนกวาง","ภูผาม่าน","ซำสูง","โคกโพธิ์ไชย","หนองนาคำ","บ้านแฮด","โนนศิลา","เวียงเก่า"],
+  "จันทบุรี":["เมืองจันทบุรี","ขลุง","ท่าใหม่","โป่งน้ำร้อน","มะขาม","แหลมสิงห์","สอยดาว","แก่งหางแมว","นายายอาม","เขาคิชฌกูฏ"],
+  "ฉะเชิงเทรา":["เมืองฉะเชิงเทรา","บางคล้า","บางน้ำเปรี้ยว","บางปะกง","บ้านโพธิ์","พนมสารคาม","ราชสาส์น","สนามชัยเขต","แปลงยาว","ท่าตะเกียบ","คลองเขื่อน"],
+  "ชลบุรี":["เมืองชลบุรี","บ้านบึง","หนองใหญ่","บางละมุง","พานทอง","พนัสนิคม","ศรีราชา","เกาะสีชัง","สัตหีบ","บ่อทอง","เกาะจันทร์"],
+  "ชัยนาท":["เมืองชัยนาท","มโนรมย์","วัดสิงห์","สรรพยา","สรรคบุรี","หันคา","หนองมะโมง","เนินขาม"],
+  "ชัยภูมิ":["เมืองชัยภูมิ","บ้านเขว้า","คอนสวรรค์","เกษตรสมบูรณ์","หนองบัวแดง","จัตุรัส","บำเหน็จณรงค์","หนองบัวระเหว","เทพสถิต","ภูเขียว","บ้านแท่น","แก้งคร้อ","คอนสาร","ภักดีชุมพล","เนินสง่า","ซับใหญ่"],
+  "ชุมพร":["เมืองชุมพร","ท่าแซะ","ปะทิว","หลังสวน","ละแม","พะโต๊ะ","สวี","ทุ่งตะโก"],
+  "เชียงราย":["เมืองเชียงราย","เวียงชัย","เชียงของ","เทิง","พาน","ป่าแดด","แม่จัน","เชียงแสน","แม่สาย","แม่สรวย","เวียงป่าเป้า","พญาเม็งราย","เวียงแก่น","ขุนตาล","แม่ฟ้าหลวง","แม่ลาว","เวียงเชียงรุ้ง","ดอยหลวง"],
+  "เชียงใหม่":["เมืองเชียงใหม่","จอมทอง","แม่แจ่ม","เชียงดาว","ดอยสะเก็ด","แม่แตง","แม่ริม","สะเมิง","ฝาง","แม่อาย","พร้าว","สันป่าตอง","สันกำแพง","สันทราย","หางดง","ฮอด","ดอยเต่า","อมก๋อย","สารภี","เวียงแหง","ไชยปราการ","แม่วาง","แม่ออน","ดอยหล่อ","กัลยาณิวัฒนา"],
+  "ตรัง":["เมืองตรัง","กันตัง","ย่านตาขาว","ปะเหลียน","สิเกา","ห้วยยอด","วังวิเศษ","นาโยง","รัษฎา","หาดสำราญ"],
+  "ตราด":["เมืองตราด","คลองใหญ่","เขาสมิง","บ่อไร่","แหลมงอบ","เกาะกูด","เกาะช้าง"],
+  "ตาก":["เมืองตาก","บ้านตาก","สามเงา","แม่ระมาด","ท่าสองยาง","แม่สอด","พบพระ","อุ้มผาง","วังเจ้า"],
+  "นครนายก":["เมืองนครนายก","ปากพลี","บ้านนา","องครักษ์"],
+  "นครปฐม":["เมืองนครปฐม","กำแพงแสน","นครชัยศรี","ดอนตูม","บางเลน","สามพราน","พุทธมณฑล"],
+  "นครพนม":["เมืองนครพนม","ปลาปาก","ท่าอุเทน","บ้านแพง","ธาตุพนม","เรณูนคร","นาแก","ศรีสงคราม","นาหว้า","โพนสวรรค์","นาทม","วังยาง"],
+  "นครราชสีมา":["เมืองนครราชสีมา","ครบุรี","เสิงสาง","คง","บ้านเหลื่อม","จักราช","โชคชัย","ด่านขุนทด","โนนไทย","โนนสูง","ขามสะแกแสง","บัวใหญ่","ประทาย","ปักธงชัย","พิมาย","ห้วยแถลง","ชุมพวง","วังน้ำเขียว","เทพารักษ์","เมืองยาง","พระทองคำ","ลำทะเมนชัย","บัวลาย","สีดา","เฉลิมพระเกียรติ"],
+  "นครศรีธรรมราช":["เมืองนครศรีธรรมราช","พรหมคีรี","ลานสกา","ฉวาง","พิปูน","เชียรใหญ่","ชะอวด","ท่าศาลา","ทุ่งสง","นาบอน","ทุ่งใหญ่","ปากพนัง","ร่อนพิบูลย์","สิชล","ขนอม","หัวไทร","บางขัน","ถ้ำพรรณรา","จุฬาภรณ์","พระพรหม","นบพิตำ","ช้างกลาง","เฉลิมพระเกียรติ"],
+  "นครสวรรค์":["เมืองนครสวรรค์","โกรกพระ","ชุมแสง","หนองบัว","บึงเสนาท","ไพศาลี","พยุหะคีรี","ลาดยาว","ตากฟ้า","แม่วงก์","แม่เปิน","ชุมตาบง"],
+  "นนทบุรี":["เมืองนนทบุรี","บางกรวย","บางใหญ่","บางบัวทอง","ไทรน้อย","ปากเกร็ด"],
+  "นราธิวาส":["เมืองนราธิวาส","ตากใบ","บาเจาะ","ยี่งอ","ระแงะ","รือเสาะ","ศรีสาคร","แว้ง","สุคิริน","สุไหงโก-ลก","สุไหงปาดี","จะแนะ","เจาะไอร้อง"],
+  "น่าน":["เมืองน่าน","แม่จริม","บ้านหลวง","นาน้อย","ปัว","ท่าวังผา","เวียงสา","ทุ่งช้าง","เชียงกลาง","นาหมื่น","สันติสุข","บึงสาม","เฉลิมพระเกียรติ"],
+  "บึงกาฬ":["เมืองบึงกาฬ","พรเจริญ","โซ่พิสัย","เซกา","ปากคาด","บึงโขงหลง","ศรีวิไล","บุ้งคล้า"],
+  "บุรีรัมย์":["เมืองบุรีรัมย์","คูเมือง","กระสัง","นางรอง","หนองกี่","ละหานทราย","ประโคนชัย","บ้านกรวด","พุทไธสง","ลำปลายมาศ","สตึก","ปะคำ","นาโพธิ์","หนองหงส์","พลับพลาชัย","ห้วยราช","โนนสุวรรณ","ชำนิ","บ้านใหม่ไชยพจน์","โนนดินแดง","บ้านด่าน","แคนดง","เฉลิมพระเกียรติ"],
+  "ปทุมธานี":["เมืองปทุมธานี","คลองหลวง","ธัญบุรี","หนองเสือ","ลาดหลุมแก้ว","ลำลูกกา","สามโคก"],
+  "ประจวบคีรีขันธ์":["เมืองประจวบคีรีขันธ์","กุยบุรี","ทับสะแก","บางสะพาน","บางสะพานน้อย","ปราณบุรี","หัวหิน","สามร้อยยอด"],
+  "ปราจีนบุรี":["เมืองปราจีนบุรี","กบินทร์บุรี","นาดี","บ้านสร้าง","ประจันตคาม","ศรีมหาโพธิ","ศรีมโหสถ"],
+  "ปัตตานี":["เมืองปัตตานี","โคกโพธิ์","หนองจิก","ปะนาเระ","มายอ","ทุ่งยางแดง","สายบุรี","ไม้แก่น","ยะหริ่ง","ยะรัง","กะพ้อ","แม่ลาน"],
+  "พระนครศรีอยุธยา":["พระนครศรีอยุธยา","ท่าเรือ","นครหลวง","บางไทร","บางบาล","บางปะอิน","บางปะหัน","ผักไห่","ภาชี","ลาดบัวหลวง","วังน้อย","เสนา","บางซ้าย","อุทัย","มหาราช","บ้านแพรก"],
+  "พระแสง":["เมืองพระแสง","พระแสง"],
+  "พะเยา":["เมืองพะเยา","จุน","เชียงคำ","เชียงม่วน","ดอกคำใต้","ปง","แม่ใจ","ภูซาง","ภูกามยาว"],
+  "พังงา":["เมืองพังงา","เกาะยาว","กะปง","ตะกั่วทุ่ง","ตะกั่วป่า","คุระบุรี","ทับปุด","ท้ายเหมือง"],
+  "พัทลุง":["เมืองพัทลุง","กงหรา","เขาชัยสน","ตะโหมด","ควนขนุน","ปากพะยูน","ศรีบรรพต","ป่าบอน","บางแก้ว","ป่าพะยอม","ศรีนครินทร์"],
+  "พิจิตร":["เมืองพิจิตร","วังทรายพูน","โพธิ์ประทับช้าง","ตะพานหิน","บางมูลนาก","โพทะเล","สามง่าม","ทับคล้อ","สากเหล็ก","บึงนาราง","ดงเจริญ","วชิรบารมี"],
+  "พิษณุโลก":["เมืองพิษณุโลก","นครไทย","ชาติตระการ","บางระกำ","บางกระทุ่ม","พรหมพิราม","วัดโบสถ์","วังทอง","เนินมะปราง"],
+  "เพชรบุรี":["เมืองเพชรบุรี","เขาย้อย","หนองหญ้าปล้อง","ชะอำ","ท่ายาง","บ้านลาด","บ้านแหลม","แก่งกระจาน"],
+  "เพชรบูรณ์":["เมืองเพชรบูรณ์","ชนแดน","หล่มสัก","หล่มเก่า","วิเชียรบุรี","ศรีเทพ","หนองไผ่","บึงสามพัน","น้ำหนาว","วังโป่ง","เขาค้อ"],
+  "แพร่":["เมืองแพร่","ร้องกวาง","ลอง","สูงเม่น","เด่นชัย","สอง","วังชิ้น","หนองม่วงไข่"],
+  "ภูเก็ต":["เมืองภูเก็ต","กะทู้","ถลาง"],
+  "มหาสารคาม":["เมืองมหาสารคาม","แกดำ","โกสุมพิสัย","กันทรวิชัย","เชียงยืน","บรบือ","นาเชือก","พยัคฆภูมิพิสัย","วาปีปทุม","นาดูน","ยางสีสุราช","กุดรัง","ชื่นชม"],
+  "มุกดาหาร":["เมืองมุกดาหาร","นิคมคำสร้อย","ดอนตาล","ดงหลวง","คำชะอี","หว้านใหญ่","หนองสูง"],
+  "แม่ฮ่องสอน":["เมืองแม่ฮ่องสอน","ขุนยวม","ปาย","แม่สะเรียง","แม่ลาน้อย","สบเมย","ปางมะผ้า"],
+  "ยโสธร":["เมืองยโสธร","ทรายมูล","กุดชุม","คำเขื่อนแก้ว","ป่าติ้ว","มหาชนะชัย","ค้อวัง","เลิงนกทา","ไทยเจริญ"],
+  "ยะลา":["เมืองยะลา","เบตง","บันนังสตา","ธารโต","ยะหา","รามัน","กาบัง","กรงปินัง"],
+  "ร้อยเอ็ด":["เมืองร้อยเอ็ด","เกษตรวิสัย","ปทุมรัตต์","จตุรพักตรพิมาน","ธวัชบุรี","พนมไพร","โพนทอง","โพธิ์ชัย","หนองพอก","เสลภูมิ","สุวรรณภูมิ","เมืองสรวง","โพนทราย","อาจสามารถ","เมยวดี","ศรีสมเด็จ","จังหาร","เฉลิมพระเกียรติ","โพนทอง","ทุ่งเขาหลวง"],
+  "ระนอง":["เมืองระนอง","ละอุ่น","กะเปอร์","กระบุรี","สุขสำราญ"],
+  "ระยอง":["เมืองระยอง","บ้านฉาง","แกลง","วังจันทร์","บ้านค่าย","ปลวกแดง","เขาชะเมา","นิคมพัฒนา"],
+  "ราชบุรี":["เมืองราชบุรี","จอมบึง","สวนผึ้ง","ดำเนินสะดวก","บ้านโป่ง","บางแพ","โพธาราม","ผาน้ำย้อย","วัดเพลง","บ้านคา"],
+  "ลพบุรี":["เมืองลพบุรี","พัฒนานิคม","โคกสำโรง","ชัยบาดาล","ท่าวุ้ง","บ้านหมี่","ท่าหลวง","สระโบสถ์","โคกเจริญ","ลำสนธิ","หนองม่วง"],
+  "ลำปาง":["เมืองลำปาง","แม่เมาะ","เกาะคา","เสริมงาม","งาว","แจ้ห่ม","วังเหนือ","เถิน","แม่พริก","แม่ทะ","สบปราบ","ห้างฉัตร","เมืองปาน"],
+  "ลำพูน":["เมืองลำพูน","แม่ทา","บ้านโฮ่ง","ลี้","ทุ่งหัวช้าง","ป่าซาง","บ้านธิ","เวียงหนองล่อง"],
+  "เลย":["เมืองเลย","นาด้วง","เชียงคาน","ปากชม","ด่านซ้าย","นาแห้ว","ภูเรือ","ท่าลี่","วังสะพุง","ภูกระดึง","ภูหลวง","ผาขาว","เอราวัณ","หนองหิน"],
+  "ศรีสะเกษ":["เมืองศรีสะเกษ","ยางชุมน้อย","กันทรารมย์","กันทรลักษ์","ขุขันธ์","ไพรบึง","ปรางค์กู่","ขุนหาญ","ราษีไศล","อุทุมพรพิสัย","บึงบูรพ์","ห้วยทับทัน","โนนคูณ","ศรีรัตนะ","น้ำเกลี้ยง","วังหิน","ภูสิงห์","เมืองจันทร์","เบญจลักษ์","พยุห์","โพธิ์ศรีสุวรรณ","ศิลาลาด"],
+  "สกลนคร":["เมืองสกลนคร","กุสุมาลย์","กุดบาก","พรรณานิคม","พังโคน","วาริชภูมิ","นิคมน้ำอูน","วานรนิวาส","คำตากล้า","บ้านม่วง","อากาศอำนวย","สว่างแดนดิน","ส่องดาว","เต่างอย","โคกศรีสุพรรณ","เจริญศิลป์","โพนนาแก้ว","ภูพาน","โนนแดง"],
+  "สงขลา":["เมืองสงขลา","สทิงพระ","จะนะ","นาทวี","เทพา","สะบ้าย้อย","ระโนด","กระแสสินธุ์","รัตภูมิ","สะเดา","หาดใหญ่","นาหม่อม","ควนเนียง","บางกล่ำ","สิงหนคร","คลองหอยโข่ง"],
+  "สตูล":["เมืองสตูล","ควนโดน","ควนกาหลง","ท่าแพ","ละงู","ทุ่งหว้า","มะนัง"],
+  "สมุทรปราการ":["เมืองสมุทรปราการ","บางบ่อ","บางพลี","พระประแดง","พระสมุทรเจดีย์","บางเสาธง"],
+  "สมุทรสงคราม":["เมืองสมุทรสงคราม","บางคนที","อัมพวา"],
+  "สมุทรสาคร":["เมืองสมุทรสาคร","กระทุ่มแบน","บ้านแพ้ว"],
+  "สระแก้ว":["เมืองสระแก้ว","คลองหาด","ตาพระยา","วังน้ำเย็น","วัฒนานคร","อรัญประเทศ","เขาฉกรรจ์","โคกสูง","วังสมบูรณ์"],
+  "สระบุรี":["เมืองสระบุรี","แก่งคอย","หนองแค","วิหารแดง","หนองแซง","บ้านหมอ","ดอนพุด","หนองโดน","พระพุทธบาท","สระโบสถ์","เฉลิมพระเกียรติ"],
+  "สิงห์บุรี":["เมืองสิงห์บุรี","บางระจัน","ค่ายบางระจัน","พรหมบุรี","ท่าช้าง","อินทร์บุรี"],
+  "สุโขทัย":["เมืองสุโขทัย","บ้านด่านลานหอย","คีรีมาศ","กงไกรลาศ","ศรีสัชนาลัย","ศรีสำโรง","สวรรคโลก","ศรีนคร","ทุ่งเสลี่ยม"],
+  "สุพรรณบุรี":["เมืองสุพรรณบุรี","เดิมบางนางบวช","ด่านช้าง","บางปลาม้า","ศรีประจันต์","ดอนเจดีย์","สองพี่น้อง","สามชุก","อู่ทอง","หนองหญ้าไซ"],
+  "สุราษฎร์ธานี":["เมืองสุราษฎร์ธานี","กาญจนดิษฐ์","ดอนสัก","เกาะสมุย","เกาะพะงัน","ไชยา","ท่าฉาง","บ้านนาสาร","บ้านนาเดิม","เคียนซา","เวียงสระ","พระแสง","พุนพิน","ชัยบุรี","วิภาวดี"],
+  "สุรินทร์":["เมืองสุรินทร์","ชุมพลบุรี","ท่าตูม","จอมพระ","ปราสาท","กาบเชิง","รัตนบุรี","สนม","ศรีณรงค์","ขุนหาญ","ศรีสุข","สังขะ","ลำดวน","สำโรงทาบ","บัวเชด","พนมดงรัก","ศรีณรงค์","เขวาสินรินทร์"],
+  "หนองคาย":["เมืองหนองคาย","ท่าบ่อ","โพนพิสัย","ศรีเชียงใหม่","สังคม","สระใคร","เฝ้าไร่","รัตนวาปี","โพธิ์ตาก"],
+  "หนองบัวลำภู":["เมืองหนองบัวลำภู","นากลาง","โนนสัง","ระดาง","สุวรรณคูหา","นาวัง"],
+  "อ่างทอง":["เมืองอ่างทอง","ไชโย","ป่าโมก","โพธิ์ทอง","แสวงหา","วิเศษชัยชาญ","สามโก้"],
+  "อำนาจเจริญ":["เมืองอำนาจเจริญ","ชานุมาน","ปทุมราชวงศา","พนา","เสนางคนิคม","หัวตะพาน","ลืออำนาจ"],
+  "อุดรธานี":["เมืองอุดรธานี","กุดจับ","หนองวัวซอ","กุมภวาปี","โนนสะอาด","หนองหาน","ทุ่งฝน","ไชยวาน","ศรีธาตุ","วังสามหมอ","บ้านดุง","บ้านผือ","น้ำโสม","เพ็ญ","สร้างคอม","หนองแสง","นายูง","พิบูลย์รักษ์","กู่แก้ว","ประจักษ์ศิลปาคม"],
+  "อุตรดิตถ์":["เมืองอุตรดิตถ์","ตรอน","ท่าปลา","น้ำปาด","ฟากท่า","บ้านโคก","พิชัย","ลับแล","ทองแสนขัน"],
+  "อุทัยธานี":["เมืองอุทัยธานี","ทัพทัน","สว่างอารมณ์","หนองฉาง","หนองขาหย่าง","บ้านไร่","ลานสัก","ห้วยคต"],
+  "อุบลราชธานี":["เมืองอุบลราชธานี","ศรีเมืองใหม่","โขงเจียม","เขื่องใน","เขมราฐ","เดชอุดม","นาจะหลวย","น้ำยืน","บุณฑริก","ตระการพืชผล","กุดข้าวปุ้น","ม่วงสามสิบ","วารินชำราบ","พิบูลมังสาหาร","ตาลสุม","โพธิ์ไทร","สำโรง","ดอนมดแดง","สิรินธร","ทุ่งศรีอุดม","นาเยีย","นาตาล","เหล่าเสือโก้ก","สว่างวีระวงศ์","น้ำขุ่น"],
+  "อุดรธานี":["เมืองอุดรธานี","กุดจับ","หนองวัวซอ","กุมภวาปี","โนนสะอาด","หนองหาน","ทุ่งฝน","ไชยวาน","ศรีธาตุ","วังสามหมอ","บ้านดุง","บ้านผือ","น้ำโสม","เพ็ญ","สร้างคอม","หนองแสง","นายูง","พิบูลย์รักษ์","กู่แก้ว","ประจักษ์ศิลปาคม"]
+};
+
+function initThailandGeo() {
+  const provSel = document.getElementById('f-province');
+  provSel.innerHTML = '<option value="">— Select Province —</option>' +
+    Object.keys(THAILAND_GEO).sort().map(p => `<option value="${p}">${p}</option>`).join('');
+}
+
+function onProvinceChange() {
+  const province = document.getElementById('f-province').value;
+  const subSel   = document.getElementById('f-subdistrict');
+  if (!province) {
+    subSel.innerHTML = '<option value="">— Select Province first —</option>';
+    return;
+  }
+  const districts = THAILAND_GEO[province] || [];
+  subSel.innerHTML = '<option value="">— Select District —</option>' +
+    districts.map(d => `<option value="${d}">${d}</option>`).join('');
+}
+
+function onSubdistrictChange() { /* address composed on submit */ }
+
+function onCategoryChange() {
+  const isHospital = document.getElementById('f-cat-hospital').checked;
+  const grp = document.getElementById('f-specialty-group');
+  if (grp) {
+    grp.style.display = isHospital ? 'block' : 'none';
+    if (!isHospital) document.getElementById('f-specialty').value = '';
+  }
+}
+
+// ── CHECK IN ──────────────────────────────────────────
+let currentCheckIn = { customerID: null, drName: '', hospital: '', lat: null, lng: null };
+
+function checkIn(id, drName, hospital) {
+  currentCheckIn = { customerID: id, drName, hospital, lat: null, lng: null };
+  document.getElementById('ci-drName').textContent   = drName;
+  document.getElementById('ci-hospital').textContent = hospital;
+  document.getElementById('ci-status').textContent   = '📡 Getting your location…';
+  document.getElementById('ci-info').style.display   = 'none';
+  document.getElementById('ci-saveBtn').style.display = 'none';
+  openModal('checkInModal');
+
+  if (!navigator.geolocation) {
+    document.getElementById('ci-status').textContent = '❌ Geolocation not supported on this device.';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const acc = Math.round(pos.coords.accuracy);
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('th-TH') + ' ' + now.toLocaleDateString('th-TH');
+      currentCheckIn.lat = lat;
+      currentCheckIn.lng = lng;
+      currentCheckIn.time = now.toISOString();
+
+      document.getElementById('ci-status').textContent = `✅ Location found (±${acc}m accuracy)`;
+      document.getElementById('ci-time').textContent = timeStr;
+      document.getElementById('ci-location').textContent = `${lat}, ${lng}`;
+      document.getElementById('ci-maplink').href = `https://www.google.com/maps?q=${lat},${lng}`;
+      document.getElementById('ci-info').style.display = 'block';
+      document.getElementById('ci-saveBtn').style.display = 'inline-flex';
+    },
+    err => {
+      const msgs = { 1:'Location permission denied.', 2:'Location unavailable.', 3:'Location request timed out.' };
+      document.getElementById('ci-status').textContent = '❌ ' + (msgs[err.code] || 'Location error.');
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+}
+
+async function saveCheckIn() {
+  const { customerID, drName, lat, lng, time } = currentCheckIn;
+  const notes = `📍 Check In: ${lat}, ${lng} | ${new Date(time).toLocaleString('th-TH')}`;
+  try {
+    await apiFetch(`${API}/${customerID}/visit`, 'POST', {
+      medRepID:  me.medRepID,
+      visitDate: time ? time.slice(0,10) : new Date().toISOString().slice(0,10),
+      notes,
+      outcome:   'Check In'
+    });
+    const btn = document.getElementById(`ci-${customerID}`);
+    if (btn) { btn.classList.add('checked-in'); btn.title = `Checked in at ${new Date(time).toLocaleTimeString('th-TH')}`; }
+    closeModal('checkInModal');
+    showToast(`📍 Checked in at ${drName}!`, 'success');
+    loadMyCustomers();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── HELPERS ────────────────────────────────────────────
+async function apiFetch(url, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const err = await res.json();
+      if (err.message || err.Message) detail += ': ' + (err.message || err.Message);
+      else if (typeof err === 'string') detail += ': ' + err;
+    } catch(_) {
+      try { const t = await res.text(); if (t) detail += ': ' + t.slice(0,200); } catch(_) {}
+    }
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+const PROD_COLORS = { Xaralto:'#e84855', Vissane:'#0ea5e9', Arcoxia:'#d97706' };
+function productBadge(p) {
+  if (!p) return '<span style="color:var(--muted)">—</span>';
+  const c = PROD_COLORS[p] || '#6b7280';
+  return `<span style="color:${c};font-weight:600">${p}</span>`;
+}
+function renderProductBadges(c) {
+  const prods = c.customerProducts?.length ? c.customerProducts
+    : c.product ? [{ name: c.product, class: c.class }] : [];
+  if (!prods.length) return '<span style="color:var(--muted)">—</span>';
+  return prods.map(p => {
+    const col = PROD_COLORS[p.name] || '#6b7280';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;margin:1px 2px;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;background:${col}18;color:${col};">
+      ${p.name} <span style="background:${col};color:#fff;border-radius:6px;padding:0 5px;font-size:11px;">${p.class||'?'}</span>
+    </span>`;
+  }).join('');
+}
+function statusIcon(s) {
+  if (s==='Approved') return '✅';
+  if (s==='Rejected') return '✕';
+  if (s==='Delete Requested') return '🗑️';
+  return '⏳';
+}
+function statusBadgeClass(s) {
+  if (s==='Approved') return 'badge-approved';
+  if (s==='Rejected') return 'badge-rejected';
+  if (s==='Delete Requested') return 'badge-delete';
+  return 'badge-pending';
+}
+function esc(s){ return (s||'').replace(/'/g,"\\'"); }
+</script>
+</body>
+</html>
