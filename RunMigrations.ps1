@@ -43,6 +43,7 @@ function Run-Script($file) {
 }
 
 Write-Host "Running migrations..." -ForegroundColor Cyan
+Run-Script "Migration_AddAreaCode.sql"
 Run-Script "Migration_AddClassD.sql"
 Run-Script "Migration_AddCategory.sql"
 Run-Script "Migration_AddSpecialty.sql"
